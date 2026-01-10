@@ -1,19 +1,19 @@
 {
-  "name": "ws-backend",
+  "name": "@repo/common",
   "module": "index.ts",
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@types/bun": "latest",
-    "@repo/common": "workspace:*"
+    "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
+  "exports": {
+    "./common": "./index.ts"
+  },
   "dependencies": {
     "@types/ws": "^8.18.1",
-    "uuid": "^13.0.0",
-    "ws": "^8.18.3"
+    "ws": "^8.19.0"
   }
-
 }
