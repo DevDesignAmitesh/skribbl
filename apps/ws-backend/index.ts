@@ -19,7 +19,8 @@ server.on("connection", (ws) => {
     const parsedData = JSON.parse(data.toString());
 
     if (parsedData.type === MESSAGE_TYPE.CREATE_ROOM) {
-      const { name, players, rounds, draw_time, language } = parsedData.data;
+      const { name, players, rounds, draw_time, language, character } =
+        parsedData.data;
 
       const roomId = crypto.randomUUID().slice(0, 7);
 
@@ -37,7 +38,7 @@ server.on("connection", (ws) => {
           {
             id: crypto.randomUUID(),
             name,
-            character: name,
+            character,
             ws,
             type: "admin",
             status: "idol",
@@ -387,7 +388,7 @@ server.on("connection", (ws) => {
             JSON.stringify({
               type: MESSAGE_TYPE.GUESSED,
               data: {
-                message: `${user.ws === ws ? "You" : user.name} guessed the right word`,
+                message: `${usr.ws === ws ? "You" : usr.name} guessed the right word`,
               },
             })
           );
