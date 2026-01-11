@@ -8,9 +8,11 @@ const rooms: {
   users: User[];
 }[] = [];
 
+let round = 0;
+
 server.on("connection", (ws) => {
   console.log("server started");
-  
+
   ws.on("open", () => console.log("client connected"));
 
   ws.on("message", (data) => {
@@ -33,10 +35,12 @@ server.on("connection", (ws) => {
         },
         users: [
           {
+            id: crypto.randomUUID(),
             name,
-            isAdmin: true,
             character: name,
             ws,
+            type: "admin",
+            status: "idol",
           },
         ],
       });
@@ -72,9 +76,11 @@ server.on("connection", (ws) => {
       }
 
       room.users.push({
+        id: crypto.randomUUID(),
         name,
         character,
-        isAdmin: false,
+        type: "member",
+        status: "idol",
         ws,
       });
 
@@ -93,10 +99,26 @@ server.on("connection", (ws) => {
     if (parsedData.type === MESSAGE_TYPE.JOIN_RANDOM) {
       const { name, character, language } = parsedData.data;
 
-      const availableRoom = rooms.find(
-        (rm) =>
-          rm.room.language === language && rm.users.length < rm.room.players
-      );
+      let finalRoom: {
+        room: Room;
+        users: User[];
+      }[] = [];
+
+      // running the loop for finding available rooms
+      rooms.forEach((rm) => {
+        if (
+          rm.room.language === language &&
+          rm.users.length < rm.room.players
+        ) {
+          finalRoom.push(rm);
+        }
+      });
+
+      // generating random index
+      const randomIndex = Math.floor(Math.random() * finalRoom.length)!;
+
+      // finding room from the random index
+      const availableRoom = finalRoom[randomIndex];
 
       if (!availableRoom) {
         ws.send(
@@ -112,10 +134,12 @@ server.on("connection", (ws) => {
       }
 
       availableRoom.users.push({
+        id: crypto.randomUUID(),
         name,
         character,
-        isAdmin: false,
+        type: "member",
         ws,
+        status: "idol",
       });
 
       availableRoom.users.forEach((usr) =>
@@ -161,7 +185,7 @@ server.on("connection", (ws) => {
         return;
       }
 
-      if (!admin.isAdmin) {
+      if (admin.type !== "admin") {
         ws.send(
           JSON.stringify({
             type: MESSAGE_TYPE.ERROR,
@@ -173,13 +197,44 @@ server.on("connection", (ws) => {
         return;
       }
 
-      let chooser: string = "";
+      if (room.users.length === 1) {
+        ws.send(
+          JSON.stringify({
+            type: MESSAGE_TYPE.ERROR,
+            data: {
+              message: "you need atleast 2 players to start the game",
+            },
+          })
+        );
+        return;
+      }
+
+      if (round === room.users.length * room.room.rounds) {
+        ws.send(
+          JSON.stringify({
+            type: MESSAGE_TYPE.GAME_END,
+            data: {
+              message: "rounds end",
+            },
+          })
+        );
+        return;
+      }
+
+      round++;
 
       const randomIndex = Math.floor(Math.random() * room.users.length)!;
-      const user = room.users[randomIndex]!;
+      const chooser = room.users[randomIndex]!;
 
-      user.status = "choosing";
-      chooser = user.name;
+      chooser.status = "chooser";
+
+      const newUsers = room.users.filter((usr) => usr.name !== chooser.name);
+
+      newUsers.forEach((usr) => {
+        usr.status = "guesser";
+      });
+
+      room.users = [...newUsers, chooser];
 
       room.users.forEach((usr) => {
         usr.ws.send(
@@ -187,7 +242,7 @@ server.on("connection", (ws) => {
             type: MESSAGE_TYPE.START_GUESS,
             data: {
               room,
-              chooser,
+              round,
             },
           })
         );
@@ -225,11 +280,25 @@ server.on("connection", (ws) => {
         return;
       }
 
-      room.room.right_word = word.trim();
+      if (user.status !== "chooser") {
+        ws.send(
+          JSON.stringify({
+            type: MESSAGE_TYPE.ERROR,
+            data: {
+              message: "You are not the chooser",
+            },
+          })
+        );
+        return;
+      }
+
+      const right_word = word.trim();
+
+      room.room.right_word = right_word;
 
       // word = 'taj mahal'
 
-      const splitedArr = (word as string).trim().split(" ");
+      const splitedArr = right_word.split(" ");
 
       // splitedArr = ["taj", "mahal"]
 
@@ -237,8 +306,8 @@ server.on("connection", (ws) => {
 
       for (let i = 0; i < splitedArr.length; i++) {
         const element = splitedArr[i];
-
         if (!element) continue;
+
         totalLength.push(element.length);
       }
 
@@ -255,6 +324,75 @@ server.on("connection", (ws) => {
           })
         );
       });
+    }
+
+    if (parsedData.type === MESSAGE_TYPE.GUESS_WORD) {
+      const { roomId, name, word } = parsedData.data;
+
+      const room = rooms.find((rm) => rm.room.id === roomId);
+
+      if (!room) {
+        ws.send(
+          JSON.stringify({
+            type: MESSAGE_TYPE.ERROR,
+            data: {
+              message: "room not found with the given id",
+            },
+          })
+        );
+        return;
+      }
+
+      const user = room.users.find((usr) => usr.name === name);
+
+      if (!user) {
+        ws.send(
+          JSON.stringify({
+            type: MESSAGE_TYPE.ERROR,
+            data: {
+              message: "user not found with the given name",
+            },
+          })
+        );
+        return;
+      }
+
+      if (user.status === "chooser") {
+        ws.send(
+          JSON.stringify({
+            type: MESSAGE_TYPE.ERROR,
+            data: {
+              message: "chooser cannot guess word",
+            },
+          })
+        );
+        return;
+      }
+
+      if (word !== room.room.right_word) {
+        ws.send(
+          JSON.stringify({
+            type: MESSAGE_TYPE.ERROR,
+            data: {
+              message: word,
+            },
+          })
+        );
+        return;
+      }
+
+      if (word === room.room.right_word) {
+        room.users.forEach((usr) => {
+          usr.ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.GUESSED,
+              data: {
+                message: `${user.ws === ws ? "You" : user.name} guessed the right word`,
+              },
+            })
+          );
+        });
+      }
     }
   });
 

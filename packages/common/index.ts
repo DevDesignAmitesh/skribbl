@@ -1,14 +1,14 @@
 import { WebSocket } from "ws";
 
-export type userType = "member" | "drawee";
-export type userStatus = "drawing" | "choosing" | "guessing";
+export type userType = "member" | "admin";
+export type userStatus = "chooser" | "guesser" | "idol";
 
 export interface User {
+  id: string;
   name: string;
   character: string;
-  type?: userType;
-  status?: userStatus;
-  isAdmin: boolean;
+  type: userType;
+  status: userStatus;
   ws: WebSocket;
 }
 
@@ -27,7 +27,10 @@ export const MESSAGE_TYPE = {
   JOIN_ROOM: "JOIN_ROOM",
   JOIN_RANDOM: "JOIN_RANDOM",
   ERROR: "ERROR",
+  GUESSED: "GUESSED",
+  GAME_END: "GAME_END",
   START_GAME: "START_GAME",
   START_GUESS: "START_GUESS",
+  GUESS_WORD: "GUESS_WORD",
   CHOOSEN_WORD: "CHOOSEN_WORD",
 };
