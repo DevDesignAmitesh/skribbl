@@ -1,3 +1,5 @@
+import { Main } from "@/page/Index";
+
 export default function Home() {
-  return <div>hi there</div>;
+  return <Main />
 }
