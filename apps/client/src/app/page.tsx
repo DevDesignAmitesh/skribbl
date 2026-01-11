@@ -1,4 +1,4 @@
-import { Main } from "@/page/Index";
+import { Main } from "@/page/Main";
 
 export default function Home() {
   return <Main />
