@@ -394,6 +394,50 @@ server.on("connection", (ws) => {
         });
       }
     }
+
+    if (parsedData.type === MESSAGE_TYPE.DRAWING) {
+      // path?: { x: number; y: number }[];
+      const { roomId, name, path } = parsedData.data;
+
+      const room = rooms.find((rm) => rm.room.id === roomId);
+
+      if (!room) {
+        ws.send(
+          JSON.stringify({
+            type: MESSAGE_TYPE.ERROR,
+            data: {
+              message: "room not found with the given Id",
+            },
+          })
+        );
+        return;
+      }
+
+      const user = room.users.find((usr) => usr.name === name);
+
+      if (!user) {
+        ws.send(
+          JSON.stringify({
+            type: MESSAGE_TYPE.ERROR,
+            data: {
+              message: "user not found with the given name",
+            },
+          })
+        );
+        return;
+      }
+
+      room.users.forEach((usr) => {
+        usr.ws.send(
+          JSON.stringify({
+            type: parsedData.type,
+            data: {
+              path,
+            },
+          })
+        );
+      });
+    }
   });
 
   ws.on("error", (err) => console.log("error in connection ", err));
