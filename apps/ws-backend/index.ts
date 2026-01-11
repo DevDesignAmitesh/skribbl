@@ -42,6 +42,7 @@ server.on("connection", (ws) => {
             ws,
             type: "admin",
             status: "idol",
+            points: 0,
           },
         ],
       });
@@ -83,6 +84,7 @@ server.on("connection", (ws) => {
         type: "member",
         status: "idol",
         ws,
+        points: 0,
       });
 
       room.users.forEach((usr) =>
@@ -141,6 +143,7 @@ server.on("connection", (ws) => {
         type: "member",
         ws,
         status: "idol",
+        points: 0,
       });
 
       availableRoom.users.forEach((usr) =>
@@ -215,13 +218,15 @@ server.on("connection", (ws) => {
           JSON.stringify({
             type: MESSAGE_TYPE.GAME_END,
             data: {
-              message: "rounds end",
+              message: "game ends",
+              room,
             },
           })
         );
         return;
       }
 
+      room.room.startedAt = Date.now();
       round++;
 
       const randomIndex = Math.floor(Math.random() * room.users.length)!;
@@ -383,6 +388,17 @@ server.on("connection", (ws) => {
       }
 
       if (word === room.room.right_word) {
+        const submitedAt = Date.now();
+        const diff = submitedAt - room.room.startedAt!;
+
+        if (diff <= 3000) {
+          user.points += 200;
+        } else if (diff <= 1000) {
+          user.points += 150;
+        } else {
+          user.points += 50;
+        }
+
         room.users.forEach((usr) => {
           usr.ws.send(
             JSON.stringify({

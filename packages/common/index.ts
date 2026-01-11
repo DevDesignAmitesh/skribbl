@@ -10,6 +10,7 @@ export interface User {
   type: userType;
   status: userStatus;
   ws: WebSocket;
+  points: number
 }
 
 export interface Room {
@@ -20,6 +21,7 @@ export interface Room {
   draw_time: number;
   rounds: number;
   right_word: string | null;
+  startedAt?: number
 }
 
 export const MESSAGE_TYPE = {
