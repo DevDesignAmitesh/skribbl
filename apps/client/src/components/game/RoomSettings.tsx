@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -8,13 +7,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AvatarSelector } from "./AvatarSelector";
 import { RoomSettings as RoomSettingsType } from "./types";
 
 interface RoomSettingsProps {
   settings: RoomSettingsType;
   onSettingsChange: (settings: RoomSettingsType) => void;
+  onCreateGame: () => void;
   onStartGame: () => void;
+  roomUrl: string | null;
 }
 
 const languages = [
@@ -28,6 +28,8 @@ const languages = [
 export const RoomSettings = ({
   settings,
   onSettingsChange,
+  onCreateGame,
+  roomUrl,
   onStartGame,
 }: RoomSettingsProps) => {
   const updateSetting = <K extends keyof RoomSettingsType>(
@@ -44,29 +46,10 @@ export const RoomSettings = ({
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="adminName">Your Name</Label>
-          <Input
-            id="adminName"
-            value={settings.adminName}
-            onChange={(e) => updateSetting("adminName", e.target.value)}
-            maxLength={20}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label>Your Avatar</Label>
-          <AvatarSelector
-            selectedIndex={settings.adminAvatar}
-            onSelect={(index) => updateSetting("adminAvatar", index)}
-            size="sm"
-          />
-        </div>
-
-        <div className="space-y-2">
           <Label htmlFor="playerCount">Players (2-8)</Label>
           <Select
-            value={settings.playerCount.toString()}
-            onValueChange={(v) => updateSetting("playerCount", parseInt(v))}
+            value={settings.players.toString()}
+            onValueChange={(v) => updateSetting("players", parseInt(v))}
           >
             <SelectTrigger id="playerCount">
               <SelectValue />
@@ -103,8 +86,8 @@ export const RoomSettings = ({
         <div className="space-y-2">
           <Label htmlFor="drawTime">Draw Time</Label>
           <Select
-            value={settings.drawTime.toString()}
-            onValueChange={(v) => updateSetting("drawTime", parseInt(v))}
+            value={settings.draw_time.toString()}
+            onValueChange={(v) => updateSetting("draw_time", parseInt(v))}
           >
             <SelectTrigger id="drawTime">
               <SelectValue />
@@ -139,9 +122,24 @@ export const RoomSettings = ({
         </div>
       </div>
       <div className="p-4 border-t border-border">
-        <Button className="w-full" onClick={onStartGame}>
-          Start Game
+        <Button className="w-full" onClick={onCreateGame}>
+          Create room
         </Button>
+        <Button className="w-full" onClick={onStartGame}>
+          Start game
+        </Button>
+        {roomUrl && (
+          <Button
+            variant={"outline"}
+            className="w-full"
+            onClick={() => {
+              navigator.clipboard.writeText(roomUrl);
+              alert("text copied");
+            }}
+          >
+            Share : {roomUrl}
+          </Button>
+        )}
       </div>
     </div>
   );

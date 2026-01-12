@@ -1,113 +1,61 @@
-import { useRef, useState, useEffect, useCallback } from "react";
+import React, { RefObject } from "react";
 import { Button } from "@/components/ui/button";
 import { Pencil, Eraser, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { tool } from "./types";
 
-const colors = [
-  "#000000", // Black
-  "#FFFFFF", // White
-  "#EF4444", // Red
-  "#F97316", // Orange
-  "#EAB308", // Yellow
-  "#22C55E", // Green
-  "#3B82F6", // Blue
-  "#8B5CF6", // Purple
-  "#EC4899", // Pink
-  "#78716C", // Brown
-];
+interface DrawingCanvasProps {
+  tool: tool;
+  setTool: React.Dispatch<React.SetStateAction<tool>>;
+  clearCanvas: () => void;
+  colors: string[];
+  strokeWidths: { value: number; label: string }[];
+  setCurrentColor: React.Dispatch<React.SetStateAction<string>>;
+  currentColor: string;
+  strokeWidth: number;
+  totalLength: number[];
+  setStrokeWidth: React.Dispatch<React.SetStateAction<number>>;
+  canvasRef: RefObject<HTMLCanvasElement | null>;
+  startDrawing: (e: React.MouseEvent<HTMLCanvasElement>) => void;
+  stopDrawing: () => void;
+  draw: (e: React.MouseEvent<HTMLCanvasElement>) => void;
+}
 
-const strokeWidths = [
-  { value: 2, label: "Thin" },
-  { value: 6, label: "Medium" },
-  { value: 12, label: "Thick" },
-];
-
-export const DrawingCanvas = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [currentColor, setCurrentColor] = useState("#000000");
-  const [strokeWidth, setStrokeWidth] = useState(6);
-  const [tool, setTool] = useState<"pencil" | "eraser">("pencil");
-  const lastPosRef = useRef<{ x: number; y: number } | null>(null);
-
-  const getContext = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return null;
-    return canvas.getContext("2d");
-  }, []);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    // Set canvas size
-    canvas.width = 600;
-    canvas.height = 400;
-
-    // Fill with white background
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }, []);
-
-  const getCanvasCoordinates = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return { x: 0, y: 0 };
-
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-
-    return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY,
-    };
-  };
-
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const pos = getCanvasCoordinates(e);
-    lastPosRef.current = pos;
-    setIsDrawing(true);
-  };
-
-  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !lastPosRef.current) return;
-
-    const ctx = getContext();
-    if (!ctx) return;
-
-    const pos = getCanvasCoordinates(e);
-
-    ctx.beginPath();
-    ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y);
-    ctx.lineTo(pos.x, pos.y);
-    ctx.strokeStyle = tool === "eraser" ? "#FFFFFF" : currentColor;
-    ctx.lineWidth = strokeWidth;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.stroke();
-
-    lastPosRef.current = pos;
-  };
-
-  const stopDrawing = () => {
-    setIsDrawing(false);
-    lastPosRef.current = null;
-  };
-
-  const clearCanvas = () => {
-    const canvas = canvasRef.current;
-    const ctx = getContext();
-    if (!canvas || !ctx) return;
-
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  };
-
+export const DrawingCanvas = ({
+  canvasRef,
+  clearCanvas,
+  colors,
+  currentColor,
+  draw,
+  setCurrentColor,
+  setStrokeWidth,
+  setTool,
+  startDrawing,
+  stopDrawing,
+  strokeWidth,
+  strokeWidths,
+  tool,
+  totalLength,
+}: DrawingCanvasProps) => {
+  console.log("totalLength", totalLength);
   return (
-    <div className="bg-card border border-border rounded-lg h-full flex flex-col">
+    <div className="relative bg-card border border-border rounded-lg h-full flex flex-col">
+      <div className="absolute top-20 left-0 right-0  text-xl text-black w-50">
+        {totalLength.map((nm, groupIdx) => {
+          const arr = Array.from({ length: nm });
+
+          return (
+            <div key={groupIdx} className="inline-block mr-4">
+              {arr.map((_, idx) => (
+                <span key={idx} className="mr-1">
+                  _
+                </span>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+
       {/* Toolbar */}
       <div className="p-3 border-b border-border flex items-center gap-4 flex-wrap">
         {/* Tools */}

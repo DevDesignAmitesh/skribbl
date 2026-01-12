@@ -1,4 +1,10 @@
-export type ViewState = "landing" | "create-room" | "joined-room";
+export type ViewState =
+  | "landing"
+  | "create-room"
+  | "joined-room"
+  | "share-room";
+
+export type chooseState = "chooser" | "choosing";
 
 export interface Player {
   id: string;
@@ -13,10 +19,11 @@ export interface ChatMessage {
 }
 
 export interface RoomSettings {
-  adminName: string;
-  adminAvatar: number;
-  playerCount: number;
+  id: string;
+  players: number;
   rounds: number;
-  drawTime: number;
+  draw_time: number;
   language: string;
 }
+
+export type tool = "pencil" | "eraser";

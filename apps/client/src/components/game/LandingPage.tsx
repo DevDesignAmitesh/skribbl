@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,9 +10,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AvatarSelector } from "./AvatarSelector";
+import { MESSAGE_TYPE } from "@repo/common/common";
+import { Player } from "./types";
 
 interface LandingPageProps {
-  onCreateRoom: (name: string, avatar: number, language: string) => void;
+  createRoom: () => void;
+  ws: WebSocket;
+  roomId: string | null;
+  player: Player;
+  setPlayer: React.Dispatch<React.SetStateAction<Player>>;
+  setLanguage: React.Dispatch<React.SetStateAction<string>>;
+  language: string;
 }
 
 const languages = [
@@ -23,16 +31,46 @@ const languages = [
   { value: "pt", label: "Portuguese" },
 ];
 
-export const LandingPage = ({ onCreateRoom }: LandingPageProps) => {
-  const [playerName, setPlayerName] = useState("");
-  const [selectedAvatar, setSelectedAvatar] = useState(0);
-  const [language, setLanguage] = useState("en");
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (playerName.trim()) {
-      onCreateRoom(playerName.trim(), selectedAvatar, language);
+export const LandingPage = ({
+  createRoom,
+  ws,
+  roomId,
+  player,
+  language,
+  setLanguage,
+  setPlayer,
+}: LandingPageProps) => {
+  const handleJoin = () => {
+    if (!player.name.trim()) {
+      alert("enter your name");
+      return;
     }
+
+    if (roomId) {
+      ws.send(
+        JSON.stringify({
+          type: MESSAGE_TYPE.JOIN_ROOM,
+          data: {
+            roomId,
+            name: player.name,
+            character: player.avatarIndex,
+          },
+        })
+      );
+
+      return;
+    }
+
+    ws.send(
+      JSON.stringify({
+        type: MESSAGE_TYPE.JOIN_RANDOM,
+        data: {
+          name: player.name,
+          character: player.avatarIndex,
+          language,
+        },
+      })
+    );
   };
 
   return (
@@ -60,14 +98,19 @@ export const LandingPage = ({ onCreateRoom }: LandingPageProps) => {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="playerName">Your Name</Label>
             <Input
               id="playerName"
               placeholder="Enter your name"
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
+              value={player.name}
+              onChange={(e) =>
+                setPlayer((prev) => ({
+                  ...prev,
+                  name: e.target.value,
+                }))
+              }
               maxLength={20}
             />
           </div>
@@ -91,19 +134,27 @@ export const LandingPage = ({ onCreateRoom }: LandingPageProps) => {
           <div className="space-y-2">
             <Label>Choose Your Avatar</Label>
             <AvatarSelector
-              selectedIndex={selectedAvatar}
-              onSelect={setSelectedAvatar}
+              selectedIndex={player.avatarIndex}
+              onSelect={(e) =>
+                setPlayer((prev) => ({
+                  ...prev,
+                  avatarIndex: e,
+                }))
+              }
             />
           </div>
 
           <Button
-            type="submit"
+            onClick={handleJoin}
             className="w-full"
-            disabled={!playerName.trim()}
+            disabled={!player.name.trim()}
           >
+            Join Room
+          </Button>
+          <Button onClick={createRoom} className="w-full" variant={"outline"}>
             Create Private Room
           </Button>
-        </form>
+        </div>
       </div>
     </div>
   );

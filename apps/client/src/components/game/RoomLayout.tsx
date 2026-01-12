@@ -1,10 +1,11 @@
 import { ReactNode } from "react";
 import { PlayersList } from "./PlayersList";
 import { ChatPanel } from "./ChatPanel";
-import { Player, ChatMessage } from "./types";
+import { ChatMessage } from "./types";
+import { User } from "@repo/common/common";
 
 interface RoomLayoutProps {
-  players: Player[];
+  players: User[];
   messages: ChatMessage[];
   onSendMessage: (message: string) => void;
   currentPlayerName: string;

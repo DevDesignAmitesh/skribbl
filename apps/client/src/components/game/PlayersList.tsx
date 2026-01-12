@@ -1,8 +1,9 @@
 import { Player } from "./types";
 import { Avatar } from "./AvatarSelector";
+import { User } from "@repo/common/common";
 
 interface PlayersListProps {
-  players: Player[];
+  players: User[];
 }
 
 export const PlayersList = ({ players }: PlayersListProps) => {
@@ -19,7 +20,7 @@ export const PlayersList = ({ players }: PlayersListProps) => {
             key={player.id}
             className="flex items-center gap-3 p-2 bg-muted rounded-lg"
           >
-            <Avatar index={player.avatarIndex} size="sm" />
+            <Avatar index={player.character} size="sm" />
             <span className="text-sm font-medium text-foreground truncate">
               {player.name}
             </span>

@@ -6,7 +6,7 @@ export type userStatus = "chooser" | "guesser" | "idol";
 export interface User {
   id: string;
   name: string;
-  character: string;
+  character: number;
   type: userType;
   status: userStatus;
   ws: WebSocket;
@@ -15,7 +15,6 @@ export interface User {
 
 export interface Room {
   id: string;
-  name: string;
   players: number;
   language: string;
   draw_time: number;
@@ -36,4 +35,6 @@ export const MESSAGE_TYPE = {
   START_GUESS: "START_GUESS",
   GUESS_WORD: "GUESS_WORD",
   CHOOSEN_WORD: "CHOOSEN_WORD",
+  YOU_ARE_CHOOSER: "YOU_ARE_CHOOSER",
+  SOMEONE_CHOOSING: "SOMEONE_CHOOSING",
 };

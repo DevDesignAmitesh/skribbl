@@ -19,15 +19,14 @@ server.on("connection", (ws) => {
     const parsedData = JSON.parse(data.toString());
 
     if (parsedData.type === MESSAGE_TYPE.CREATE_ROOM) {
-      const { name, players, rounds, draw_time, language, character } =
+      const { players, rounds, draw_time, language, character, userName, id } =
         parsedData.data;
 
-      const roomId = crypto.randomUUID().slice(0, 7);
+      const roomId = id;
 
       rooms.push({
         room: {
           id: roomId,
-          name,
           players,
           rounds,
           draw_time,
@@ -37,7 +36,7 @@ server.on("connection", (ws) => {
         users: [
           {
             id: crypto.randomUUID(),
-            name,
+            name: userName,
             character,
             ws,
             type: "admin",
@@ -242,13 +241,24 @@ server.on("connection", (ws) => {
 
       room.users = [...newUsers, chooser];
 
-      room.users.forEach((usr) => {
+      chooser.ws.send(
+        JSON.stringify({
+          type: MESSAGE_TYPE.YOU_ARE_CHOOSER,
+          data: {
+            room,
+            round,
+          },
+        })
+      );
+
+      newUsers.forEach((usr) => {
         usr.ws.send(
           JSON.stringify({
-            type: MESSAGE_TYPE.START_GUESS,
+            type: MESSAGE_TYPE.SOMEONE_CHOOSING,
             data: {
               room,
               round,
+              message: `${chooser.name} is choosing`,
             },
           })
         );
@@ -375,6 +385,19 @@ server.on("connection", (ws) => {
         return;
       }
 
+      if (user.status === "idol") {
+        ws.send(
+          JSON.stringify({
+            type: MESSAGE_TYPE.ERROR,
+            data: {
+              message:
+                "you already guess word or wait for new round to get started",
+            },
+          })
+        );
+        return;
+      }
+
       if (word !== room.room.right_word) {
         ws.send(
           JSON.stringify({
@@ -398,6 +421,8 @@ server.on("connection", (ws) => {
         } else {
           user.points += 50;
         }
+
+        user.status = "idol";
 
         room.users.forEach((usr) => {
           usr.ws.send(
