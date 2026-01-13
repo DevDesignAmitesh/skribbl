@@ -4,7 +4,7 @@ export type ViewState =
   | "joined-room"
   | "share-room";
 
-export type chooseState = "chooser" | "choosing";
+export type chooseState = "chooser" | "choosing" | "guessed";
 
 export interface Player {
   id: string;

@@ -268,6 +268,8 @@ server.on("connection", (ws) => {
     if (parsedData.type === MESSAGE_TYPE.CHOOSEN_WORD) {
       const { roomId, word, name } = parsedData.data;
 
+      console.log("word", word);
+
       const room = rooms.find((rm) => rm.room.id === roomId);
 
       if (!room) {
@@ -399,14 +401,16 @@ server.on("connection", (ws) => {
       }
 
       if (word !== room.room.right_word) {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.ERROR,
-            data: {
-              message: word,
-            },
-          })
-        );
+        room.users.forEach((usr) => {
+          usr.ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.ERROR,
+              data: {
+                message: word,
+              },
+            })
+          );
+        });
         return;
       }
 
@@ -439,7 +443,7 @@ server.on("connection", (ws) => {
 
     if (parsedData.type === MESSAGE_TYPE.DRAWING) {
       // path?: { x: number; y: number }[];
-      const { roomId, name, path } = parsedData.data;
+      const { roomId, name, payload } = parsedData.data;
 
       const room = rooms.find((rm) => rm.room.id === roomId);
 
@@ -474,7 +478,7 @@ server.on("connection", (ws) => {
           JSON.stringify({
             type: parsedData.type,
             data: {
-              path,
+              payload,
             },
           })
         );

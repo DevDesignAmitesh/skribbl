@@ -16,6 +16,7 @@ import {
 import { MESSAGE_TYPE, Room, type User } from "@repo/common/common";
 import { WS_URL } from "@/lib/lib";
 import { useSearchParams } from "next/navigation";
+import { WordSelection } from "@/components/game/WordSelection";
 
 const colors = [
   "#000000", // Black
@@ -36,23 +37,26 @@ const strokeWidths = [
   { value: 12, label: "Thick" },
 ];
 
+// Mock words for selection
+const mockWords = ["Elephant", "Bicycle", "Rainbow"];
+
 export const Main = () => {
   const params = useSearchParams();
   const roomId = params.get("roomId");
 
   // used in the landing page
   const [language, setLanguage] = useState("en");
-
   const [player, setPlayer] = useState<Player>({
     id: crypto.randomUUID(),
     name: "",
     avatarIndex: 2,
   });
 
-  const [view, setView] = useState<ViewState>("landing");
+  const [view, setView] = useState<ViewState>("share-room");
   const [chooseType, setChooseType] = useState<chooseState | null>(null);
 
   const [chooseMessage, setChooseMessage] = useState<string>("");
+  const [gussedMessage, setGuessedMessage] = useState<string>("");
 
   const [totalLength, setTotalLength] = useState<number[]>([]);
 
@@ -91,17 +95,17 @@ export const Main = () => {
     setView("create-room");
   };
 
-  useEffect(() => {
-    console.log(player);
-  }, [player]);
-
   const handleSendMessage = (message: string) => {
-    const newMessage: ChatMessage = {
-      id: Date.now().toString(),
-      playerName: player.name || "You",
-      message,
-    };
-    setMessages((prev) => [...prev, newMessage]);
+    ws?.send(
+      JSON.stringify({
+        type: MESSAGE_TYPE.GUESS_WORD,
+        data: {
+          roomId: roomId ?? roomSettings.id,
+          word: message,
+          name: player.name,
+        },
+      })
+    );
   };
 
   const handleCreateRoom = () => {
@@ -179,23 +183,31 @@ export const Main = () => {
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDrawing || !lastPosRef.current) return;
-    console.log("running");
-
-    const ctx = getContext();
-    if (!ctx) return;
+    if (!ws) return;
 
     const pos = getCanvasCoordinates(e);
 
-    ctx.beginPath();
-    ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y);
-    ctx.lineTo(pos.x, pos.y);
-    ctx.strokeStyle = tool === "eraser" ? "#FFFFFF" : currentColor;
-    ctx.lineWidth = strokeWidth;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.stroke();
+    const payload = {
+      type: "stroke",
+      from: lastPosRef.current,
+      to: pos,
+      color: tool === "eraser" ? "#FFFFFF" : currentColor,
+      width: strokeWidth,
+      tool,
+      name: player.name,
+      roomId,
+    };
 
-    lastPosRef.current = pos;
+    ws.send(
+      JSON.stringify({
+        type: MESSAGE_TYPE.DRAWING,
+        data: {
+          payload,
+          roomId: roomId ?? roomSettings.id,
+          name: player.name,
+        },
+      })
+    );
   };
 
   const stopDrawing = () => {
@@ -274,6 +286,42 @@ export const Main = () => {
         setChooseType(null);
         setTotalLength(totalLength);
       }
+
+      if (parsedData.type === MESSAGE_TYPE.ERROR) {
+        const { message } = parsedData.data;
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            message,
+            playerName: player.name,
+          },
+        ]);
+      }
+
+      if (parsedData.type === MESSAGE_TYPE.GUESSED) {
+        const { message } = parsedData.data;
+        setGuessedMessage(message);
+        setChooseType("guessed");
+      }
+
+      if (parsedData.type === MESSAGE_TYPE.DRAWING) {
+        const ctx = getContext();
+        if (!ctx) return;
+        const { payload } = parsedData.data;
+        const { type, from, to, color, width, tool } = payload;
+
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        ctx.lineTo(to.x, to.y);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.stroke();
+
+        lastPosRef.current = to;
+      }
     };
   }, []);
 
@@ -282,24 +330,21 @@ export const Main = () => {
   }
 
   if (chooseType === "chooser") {
-    return (
-      <div className="z-100 inset-0 bg-black/20 fixed flex justify-center items-center gap-20">
-        {["WORD1", "WORD2", "WORD3"].map((it) => (
-          <div
-            onClick={() => sendGuessedWord(it)}
-            className="p-20 text-2xl rounded-md bg-white text-black"
-          >
-            {it}
-          </div>
-        ))}
-      </div>
-    );
+    return <WordSelection words={mockWords} onSelectWord={sendGuessedWord} />;
   }
 
   if (chooseType === "choosing") {
     return (
       <div className="z-100 inset-0 bg-black/20 text-white fixed flex justify-center items-center gap-20">
         {chooseMessage}
+      </div>
+    );
+  }
+
+  if (chooseType === "guessed") {
+    return (
+      <div className="z-100 inset-0 bg-black/20 text-white fixed flex justify-center items-center gap-20">
+        {gussedMessage}
       </div>
     );
   }
@@ -336,6 +381,11 @@ export const Main = () => {
           />
         ) : (
           <DrawingCanvas
+            currentRound={3}
+            drawTime={60}
+            onTimeUp={() => {}}
+            totalRounds={10}
+            // totalLength={[4, 5]}
             totalLength={totalLength}
             canvasRef={canvasRef}
             clearCanvas={clearCanvas}
