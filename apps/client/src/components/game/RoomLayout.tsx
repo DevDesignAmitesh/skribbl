@@ -8,7 +8,7 @@ interface RoomLayoutProps {
   players: User[];
   messages: ChatMessage[];
   onSendMessage: (message: string) => void;
-  currentPlayerName: string;
+  currentPlayerId: string;
   centerContent: ReactNode;
 }
 
@@ -16,14 +16,14 @@ export const RoomLayout = ({
   players,
   messages,
   onSendMessage,
-  currentPlayerName,
+  currentPlayerId,
   centerContent,
 }: RoomLayoutProps) => {
   return (
     <div className="min-h-screen bg-secondary p-4">
       <div className="max-w-7xl mx-auto h-[calc(100vh-2rem)] grid grid-cols-[250px_1fr_280px] gap-4">
         {/* Left Panel - Players */}
-        <PlayersList players={players} />
+        <PlayersList players={players} currentPlayerId={currentPlayerId} />
 
         {/* Center Panel */}
         {centerContent}
@@ -32,7 +32,7 @@ export const RoomLayout = ({
         <ChatPanel
           messages={messages}
           onSendMessage={onSendMessage}
-          currentPlayerName={currentPlayerName}
+          currentPlayerId={currentPlayerId}
         />
       </div>
     </div>

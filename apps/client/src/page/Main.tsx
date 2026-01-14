@@ -1,3 +1,5 @@
+// TODO: we can added messages from server if some one joins/left or room is terminated and etc
+
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -8,7 +10,6 @@ import { DrawingCanvas } from "@/components/game/DrawingCanvas";
 import {
   ViewState,
   ChatMessage,
-  RoomSettings as RoomSettingsType,
   Player,
   tool,
   chooseState,
@@ -17,6 +18,7 @@ import { MESSAGE_TYPE, Room, type User } from "@repo/common/common";
 import { WS_URL } from "@/lib/lib";
 import { useSearchParams } from "next/navigation";
 import { WordSelection } from "@/components/game/WordSelection";
+import { toast } from "sonner";
 
 const colors = [
   "#000000", // Black
@@ -49,11 +51,12 @@ export const Main = () => {
     avatarIndex: 2,
   });
 
+  const [currentPlayer, setCurrentPlayer] = useState<User | null>(null);
+
   const [view, setView] = useState<ViewState>("landing");
   const [chooseType, setChooseType] = useState<chooseState | null>(null);
 
   const [chooseMessage, setChooseMessage] = useState<string>("");
-  const [gussedMessage, setGuessedMessage] = useState<string>("");
 
   const [totalLength, setTotalLength] = useState<number[]>([]);
 
@@ -68,13 +71,15 @@ export const Main = () => {
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
-  const [roomSettings, setRoomSettings] = useState<RoomSettingsType>({
+  const [roomSettings, setRoomSettings] = useState<Room>({
     id: crypto.randomUUID().slice(0, 7),
     players: 2,
     rounds: 2,
     draw_time: 60,
     language: "en",
     custom_word: [],
+    right_word: null,
+    status: "creating",
   });
 
   // getting used in the drawing canvas comp
@@ -98,7 +103,7 @@ export const Main = () => {
       JSON.stringify({
         type: MESSAGE_TYPE.GUESS_WORD,
         data: {
-          roomId: roomId ?? roomSettings.id,
+          roomId: roomId ?? roomSettings.id ?? room.room?.id,
           word: message,
           name: player.name,
         },
@@ -107,6 +112,18 @@ export const Main = () => {
   };
 
   const handleCreateRoom = () => {
+    if (roomSettings.custom_word.length <= 3) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          from: "client",
+          message: "atleast 3 words should be in customize words",
+        },
+      ]);
+
+      return;
+    }
     if (!ws) return;
 
     ws.send(
@@ -115,6 +132,7 @@ export const Main = () => {
         data: {
           ...roomSettings,
           userName: player.name,
+          userId: player.id,
           character: player.avatarIndex,
         },
       })
@@ -145,7 +163,7 @@ export const Main = () => {
       JSON.stringify({
         type: MESSAGE_TYPE.CHOOSEN_WORD,
         data: {
-          roomId: roomId ?? roomSettings.id,
+          roomId: roomId ?? roomSettings.id ?? room.room?.id,
           word,
           name: player.name,
         },
@@ -201,7 +219,7 @@ export const Main = () => {
         type: MESSAGE_TYPE.DRAWING,
         data: {
           payload,
-          roomId: roomId ?? roomSettings.id,
+          roomId: roomId ?? roomSettings.id ?? room.room?.id,
           name: player.name,
         },
       })
@@ -227,6 +245,13 @@ export const Main = () => {
     setRoomSettings((prev) => ({ ...prev, custom_word: arr }));
   };
 
+  const handleBack = () => {
+    setView("landing");
+    // TODO: we should send message back to server for deleting the room
+    // when the room will be deleting, the users will be also get notified and we can setView("landing")
+  };
+
+  // for setting canvas details
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -243,11 +268,15 @@ export const Main = () => {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }, []);
 
+  // handle websocket connection
   useEffect(() => {
     const ws = new WebSocket(WS_URL);
     setWs(ws);
+  }, []);
 
-    ws.onopen = () => {};
+  // handle websocket messages (INCOMING)
+  useEffect(() => {
+    if (!ws) return;
 
     ws.onmessage = (event) => {
       const parsedData = JSON.parse(event.data);
@@ -262,10 +291,29 @@ export const Main = () => {
       }
 
       if (parsedData.type === MESSAGE_TYPE.JOIN_ROOM) {
+        const { room } = parsedData.data as {
+          room: { room: Room; users: User[] };
+        };
+
+        setRoom(room);
+        if (room.room.status === "creating") {
+          setView("waiting");
+        }
+        if (room.room.status === "ongoing") {
+          setView("share-room");
+        }
+      }
+
+      if (parsedData.type === MESSAGE_TYPE.JOIN_RANDOM) {
         const { room } = parsedData.data;
 
         setRoom(room);
-        setView("create-room");
+        if (room.room.status === "creating") {
+          setView("waiting");
+        }
+        if (room.room.status === "ongoing") {
+          setView("share-room");
+        }
       }
 
       if (parsedData.type === MESSAGE_TYPE.YOU_ARE_CHOOSER) {
@@ -290,22 +338,22 @@ export const Main = () => {
         setTotalLength(totalLength);
       }
 
-      if (parsedData.type === MESSAGE_TYPE.ERROR) {
-        const { message } = parsedData.data;
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: crypto.randomUUID(),
-            message,
-            playerName: player.name,
-          },
-        ]);
-      }
-
-      if (parsedData.type === MESSAGE_TYPE.GUESSED) {
-        const { message } = parsedData.data;
-        setGuessedMessage(message);
-        setChooseType("guessed");
+      if (parsedData.type === MESSAGE_TYPE.MESSAGE) {
+        const { message, from } = parsedData.data;
+        if (view === "landing") {
+          toast.error(from, {
+            description: message,
+          });
+        } else {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: crypto.randomUUID(),
+              message,
+              from,
+            },
+          ]);
+        }
       }
 
       if (parsedData.type === MESSAGE_TYPE.DRAWING) {
@@ -326,7 +374,15 @@ export const Main = () => {
         lastPosRef.current = to;
       }
     };
-  }, []);
+  }, [view, ws]);
+
+  // setCurrentPlayer
+  useEffect(() => {
+    const user = room.users.find((usr) => usr.name === player.name);
+    if (user) {
+      setCurrentPlayer(user);
+    }
+  }, [room]);
 
   if (!ws) {
     return <div>Connecting to server....</div>;
@@ -335,7 +391,7 @@ export const Main = () => {
   if (chooseType === "chooser") {
     return (
       <WordSelection
-        words={roomSettings.custom_word}
+        words={room?.room?.custom_word ?? []}
         onSelectWord={sendGuessedWord}
       />
     );
@@ -343,16 +399,8 @@ export const Main = () => {
 
   if (chooseType === "choosing") {
     return (
-      <div className="z-100 inset-0 bg-black/20 text-white fixed flex justify-center items-center gap-20">
+      <div className="z-100 inset-0 opacity-50 bg-card border border-border text-muted-foreground rounded-lg h-screen flex justify-center items-center">
         {chooseMessage}
-      </div>
-    );
-  }
-
-  if (chooseType === "guessed") {
-    return (
-      <div className="z-100 inset-0 bg-black/20 text-white fixed flex justify-center items-center gap-20">
-        {gussedMessage}
       </div>
     );
   }
@@ -377,10 +425,13 @@ export const Main = () => {
       players={room.users}
       messages={messages}
       onSendMessage={handleSendMessage}
-      currentPlayerName={player.name}
+      currentPlayerId={player.id}
       centerContent={
-        view === "create-room" ? (
+        view === "create-room" ||
+        (currentPlayer && currentPlayer.type === "admin") ? (
           <RoomSettings
+            setMessages={setMessages}
+            handleBack={handleBack}
             handleCustomWords={handleCustomWords}
             roomUrl={roomUrl}
             settings={roomSettings}
@@ -388,6 +439,13 @@ export const Main = () => {
             onCreateGame={handleCreateRoom}
             onStartGame={handleStartGame}
           />
+        ) : view === "waiting" ? (
+          // TODO: we can show the preview of room setting instead of this blank screen
+          // it is easy to add just pass this condition => currentPlayer && currentPlayer.type === "admin"
+          // and render the inputs disability accordingly ( you know this.... )
+          <div className="bg-card border border-border text-muted-foreground rounded-lg h-full flex justify-center items-center">
+            waiting for the admin to start the game
+          </div>
         ) : (
           <DrawingCanvas
             currentRound={3}

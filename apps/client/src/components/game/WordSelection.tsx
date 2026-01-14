@@ -1,4 +1,5 @@
-import { useState } from "react";
+// TODO: make sure that random words are not repeating itself...
+
 import { cn } from "@/lib/utils";
 
 interface WordSelectionProps {
@@ -7,7 +8,6 @@ interface WordSelectionProps {
 }
 
 export const WordSelection = ({ words, onSelectWord }: WordSelectionProps) => {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const randomWords = getRandomWords(words);
 
   return (
@@ -20,15 +20,12 @@ export const WordSelection = ({ words, onSelectWord }: WordSelectionProps) => {
           <button
             key={index}
             onClick={() => onSelectWord(word)}
-            onMouseEnter={() => setHoveredIndex(index)}
-            onMouseLeave={() => setHoveredIndex(null)}
             className={cn(
               "w-48 h-32 rounded-lg border-2 flex items-center justify-center",
               "text-xl font-semibold transition-all duration-200",
               "bg-background hover:bg-accent",
-              hoveredIndex === index
-                ? "border-primary scale-105 shadow-lg"
-                : "border-border"
+              "hover:border-primary hover:scale-105 hover:shadow-lg",
+              "hover:border-border"
             )}
           >
             {word}

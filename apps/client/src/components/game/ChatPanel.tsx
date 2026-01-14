@@ -5,13 +5,13 @@ import { ChatMessage } from "./types";
 interface ChatPanelProps {
   messages: ChatMessage[];
   onSendMessage: (message: string) => void;
-  currentPlayerName: string;
+  currentPlayerId: string;
 }
 
 export const ChatPanel = ({
   messages,
   onSendMessage,
-  currentPlayerName,
+  currentPlayerId,
 }: ChatPanelProps) => {
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -35,9 +35,7 @@ export const ChatPanel = ({
       <div className="flex-1 overflow-y-auto p-3 space-y-1">
         {messages.map((msg) => (
           <div key={msg.id} className="text-sm">
-            <span className="font-semibold text-foreground">
-              {msg.playerName}:
-            </span>{" "}
+            <span className="font-semibold text-foreground">{msg.from}:</span>{" "}
             <span className="text-muted-foreground">{msg.message}</span>
           </div>
         ))}

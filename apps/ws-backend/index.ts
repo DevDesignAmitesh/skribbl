@@ -13,7 +13,7 @@ let round = 0;
 server.on("connection", (ws) => {
   console.log("server started");
 
-  ws.on("open", () => console.log("client connected"));
+  ws.on("error", (err) => console.log(err));
 
   ws.on("message", (data) => {
     const parsedData = JSON.parse(data.toString());
@@ -28,6 +28,8 @@ server.on("connection", (ws) => {
         userName,
         id,
         custom_word,
+        status,
+        userId,
       } = parsedData.data;
 
       const roomId = id;
@@ -41,10 +43,11 @@ server.on("connection", (ws) => {
           language,
           right_word: null,
           custom_word,
+          status,
         },
         users: [
           {
-            id: crypto.randomUUID(),
+            id: userId,
             name: userName,
             character,
             ws,
@@ -69,16 +72,17 @@ server.on("connection", (ws) => {
     }
 
     if (parsedData.type === MESSAGE_TYPE.JOIN_ROOM) {
-      const { roomId, name, character } = parsedData.data;
+      const { roomId, name, character, userId } = parsedData.data;
 
       const room = rooms.find((rm) => rm.room.id === roomId);
 
       if (!room) {
         ws.send(
           JSON.stringify({
-            type: MESSAGE_TYPE.ERROR,
+            type: MESSAGE_TYPE.MESSAGE,
             data: {
               message: "Room with the give Id not found",
+              from: "server",
             },
           })
         );
@@ -88,9 +92,23 @@ server.on("connection", (ws) => {
       if (room.users.length === room.room.players) {
         ws.send(
           JSON.stringify({
-            type: MESSAGE_TYPE.ERROR,
+            type: MESSAGE_TYPE.MESSAGE,
             data: {
               message: "Room is already full",
+              from: "server",
+            },
+          })
+        );
+        return;
+      }
+
+      if (room.room.status === "ended") {
+        ws.send(
+          JSON.stringify({
+            type: MESSAGE_TYPE.MESSAGE,
+            data: {
+              message: "Room already ended",
+              from: "server",
             },
           })
         );
@@ -98,7 +116,7 @@ server.on("connection", (ws) => {
       }
 
       room.users.push({
-        id: crypto.randomUUID(),
+        id: userId,
         name,
         character,
         type: "member",
@@ -120,7 +138,7 @@ server.on("connection", (ws) => {
     }
 
     if (parsedData.type === MESSAGE_TYPE.JOIN_RANDOM) {
-      const { name, character, language } = parsedData.data;
+      const { name, character, language, userId } = parsedData.data;
 
       let finalRoom: {
         room: Room;
@@ -131,7 +149,8 @@ server.on("connection", (ws) => {
       rooms.forEach((rm) => {
         if (
           rm.room.language === language &&
-          rm.users.length < rm.room.players
+          rm.users.length < rm.room.players &&
+          rm.room.status !== "ended"
         ) {
           finalRoom.push(rm);
         }
@@ -146,10 +165,10 @@ server.on("connection", (ws) => {
       if (!availableRoom) {
         ws.send(
           JSON.stringify({
-            type: MESSAGE_TYPE.ERROR,
+            type: MESSAGE_TYPE.MESSAGE,
             data: {
-              message:
-                "There are no available room at this moment, kindly try again by changing your langugae",
+              message: "There are no available room at this moment",
+              from: "server",
             },
           })
         );
@@ -157,7 +176,7 @@ server.on("connection", (ws) => {
       }
 
       availableRoom.users.push({
-        id: crypto.randomUUID(),
+        id: userId,
         name,
         character,
         type: "member",
@@ -186,9 +205,10 @@ server.on("connection", (ws) => {
       if (!room) {
         ws.send(
           JSON.stringify({
-            type: MESSAGE_TYPE.ERROR,
+            type: MESSAGE_TYPE.MESSAGE,
             data: {
               message: "Room with the give Id not found",
+              from: "server",
             },
           })
         );
@@ -200,9 +220,10 @@ server.on("connection", (ws) => {
       if (!admin) {
         ws.send(
           JSON.stringify({
-            type: MESSAGE_TYPE.ERROR,
+            type: MESSAGE_TYPE.MESSAGE,
             data: {
               message: "User with the give name not found",
+              from: "server",
             },
           })
         );
@@ -212,9 +233,10 @@ server.on("connection", (ws) => {
       if (admin.type !== "admin") {
         ws.send(
           JSON.stringify({
-            type: MESSAGE_TYPE.ERROR,
+            type: MESSAGE_TYPE.MESSAGE,
             data: {
               message: "You are not admin",
+              from: "server",
             },
           })
         );
@@ -224,9 +246,10 @@ server.on("connection", (ws) => {
       if (room.users.length === 1) {
         ws.send(
           JSON.stringify({
-            type: MESSAGE_TYPE.ERROR,
+            type: MESSAGE_TYPE.MESSAGE,
             data: {
               message: "you need atleast 2 players to start the game",
+              from: "server",
             },
           })
         );
@@ -243,6 +266,8 @@ server.on("connection", (ws) => {
             },
           })
         );
+        round = 0;
+        room.room.status = "ended";
         return;
       }
 
@@ -289,16 +314,15 @@ server.on("connection", (ws) => {
     if (parsedData.type === MESSAGE_TYPE.CHOOSEN_WORD) {
       const { roomId, word, name } = parsedData.data;
 
-      console.log("word", word);
-
       const room = rooms.find((rm) => rm.room.id === roomId);
 
       if (!room) {
         ws.send(
           JSON.stringify({
-            type: MESSAGE_TYPE.ERROR,
+            type: MESSAGE_TYPE.MESSAGE,
             data: {
               message: "Room with the give Id not found",
+              from: "server",
             },
           })
         );
@@ -310,9 +334,10 @@ server.on("connection", (ws) => {
       if (!user) {
         ws.send(
           JSON.stringify({
-            type: MESSAGE_TYPE.ERROR,
+            type: MESSAGE_TYPE.MESSAGE,
             data: {
               message: "User with the give name not found",
+              from: "server",
             },
           })
         );
@@ -322,9 +347,10 @@ server.on("connection", (ws) => {
       if (user.status !== "chooser") {
         ws.send(
           JSON.stringify({
-            type: MESSAGE_TYPE.ERROR,
+            type: MESSAGE_TYPE.MESSAGE,
             data: {
               message: "You are not the chooser",
+              from: "server",
             },
           })
         );
@@ -373,9 +399,10 @@ server.on("connection", (ws) => {
       if (!room) {
         ws.send(
           JSON.stringify({
-            type: MESSAGE_TYPE.ERROR,
+            type: MESSAGE_TYPE.MESSAGE,
             data: {
               message: "room not found with the given id",
+              from: "server",
             },
           })
         );
@@ -387,9 +414,10 @@ server.on("connection", (ws) => {
       if (!user) {
         ws.send(
           JSON.stringify({
-            type: MESSAGE_TYPE.ERROR,
+            type: MESSAGE_TYPE.MESSAGE,
             data: {
               message: "user not found with the given name",
+              from: "server",
             },
           })
         );
@@ -399,9 +427,10 @@ server.on("connection", (ws) => {
       if (user.status === "chooser") {
         ws.send(
           JSON.stringify({
-            type: MESSAGE_TYPE.ERROR,
+            type: MESSAGE_TYPE.MESSAGE,
             data: {
               message: "chooser cannot guess word",
+              from: "server",
             },
           })
         );
@@ -411,10 +440,11 @@ server.on("connection", (ws) => {
       if (user.status === "idol") {
         ws.send(
           JSON.stringify({
-            type: MESSAGE_TYPE.ERROR,
+            type: MESSAGE_TYPE.MESSAGE,
             data: {
               message:
-                "you already guess word or wait for new round to get started",
+                "you already guessed word or wait for new round to get started",
+              from: "server",
             },
           })
         );
@@ -425,9 +455,10 @@ server.on("connection", (ws) => {
         room.users.forEach((usr) => {
           usr.ws.send(
             JSON.stringify({
-              type: MESSAGE_TYPE.ERROR,
+              type: MESSAGE_TYPE.MESSAGE,
               data: {
                 message: word,
+                from: user.name,
               },
             })
           );
@@ -452,9 +483,10 @@ server.on("connection", (ws) => {
         room.users.forEach((usr) => {
           usr.ws.send(
             JSON.stringify({
-              type: MESSAGE_TYPE.GUESSED,
+              type: MESSAGE_TYPE.MESSAGE,
               data: {
                 message: `${usr.ws === ws ? "You" : usr.name} guessed the right word`,
+                from: usr.ws === ws ? "You" : usr.name,
               },
             })
           );
@@ -471,7 +503,7 @@ server.on("connection", (ws) => {
       if (!room) {
         ws.send(
           JSON.stringify({
-            type: MESSAGE_TYPE.ERROR,
+            type: MESSAGE_TYPE.MESSAGE,
             data: {
               message: "room not found with the given Id",
             },
@@ -485,7 +517,7 @@ server.on("connection", (ws) => {
       if (!user) {
         ws.send(
           JSON.stringify({
-            type: MESSAGE_TYPE.ERROR,
+            type: MESSAGE_TYPE.MESSAGE,
             data: {
               message: "user not found with the given name",
             },
@@ -506,6 +538,4 @@ server.on("connection", (ws) => {
       });
     }
   });
-
-  ws.on("error", (err) => console.log("error in connection ", err));
 });

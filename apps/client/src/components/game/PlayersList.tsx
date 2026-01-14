@@ -4,6 +4,7 @@ import { User } from "@repo/common/common";
 
 interface PlayersListProps {
   players: User[];
+  currentPlayerId: string;
 }
 
 const getRankIcon = (rank: number) => {
@@ -23,7 +24,7 @@ const getRankIcon = (rank: number) => {
   }
 };
 
-export const PlayersList = ({ players }: PlayersListProps) => {
+export const PlayersList = ({ players, currentPlayerId }: PlayersListProps) => {
   // Sort players by score (highest first)
   const sortedPlayers = [...players].sort((a, b) => b.points - a.points);
 
@@ -50,7 +51,7 @@ export const PlayersList = ({ players }: PlayersListProps) => {
             <Avatar index={player.character} size="sm" />
             <div className="flex-1 min-w-0">
               <span className="text-sm font-medium text-foreground truncate block">
-                {player.name}
+                {player.name} {player.id === currentPlayerId && "(YOU)"}
               </span>
             </div>
             <span className="text-sm font-bold text-primary">

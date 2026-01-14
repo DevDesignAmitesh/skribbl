@@ -2,6 +2,7 @@ import { WebSocket } from "ws";
 
 export type userType = "member" | "admin";
 export type userStatus = "chooser" | "guesser" | "idol";
+export type roomStatus = "ongoing" | "creating" | "ended";
 
 export interface User {
   id: string;
@@ -19,6 +20,7 @@ export interface Room {
   language: string;
   draw_time: number;
   rounds: number;
+  status: roomStatus;
   right_word: string | null;
   custom_word: string[];
   startedAt?: number;
@@ -28,8 +30,7 @@ export const MESSAGE_TYPE = {
   CREATE_ROOM: "CREATE_ROOM",
   JOIN_ROOM: "JOIN_ROOM",
   JOIN_RANDOM: "JOIN_RANDOM",
-  ERROR: "ERROR",
-  GUESSED: "GUESSED",
+  MESSAGE: "MESSAGE",
   GAME_END: "GAME_END",
   START_GAME: "START_GAME",
   DRAWING: "DRAWING",

@@ -7,14 +7,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RoomSettings as RoomSettingsType } from "./types";
+import { Room } from "@repo/common/common";
 import { useState } from "react";
+import { ChatMessage } from "./types";
 
 interface RoomSettingsProps {
-  settings: RoomSettingsType;
-  onSettingsChange: (settings: RoomSettingsType) => void;
+  settings: Room;
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
+  onSettingsChange: (settings: Room) => void;
   handleCustomWords: (words: string) => void;
   onCreateGame: () => void;
+  handleBack: () => void;
   onStartGame: () => void;
   roomUrl: string | null;
 }
@@ -34,11 +37,10 @@ export const RoomSettings = ({
   roomUrl,
   onStartGame,
   handleCustomWords,
+  handleBack,
+  setMessages,
 }: RoomSettingsProps) => {
-  const updateSetting = <K extends keyof RoomSettingsType>(
-    key: K,
-    value: RoomSettingsType[K]
-  ) => {
+  const updateSetting = <K extends keyof Room>(key: K, value: Room[K]) => {
     onSettingsChange({ ...settings, [key]: value });
   };
 
@@ -53,7 +55,6 @@ export const RoomSettings = ({
 
   const generate = () => {
     const arr = [
-      "cat, dog, house, car, sun, ninja, robot, dinosaur, unicorn, dragon, airplane, camera, umbrella, skateboard, popcorn, snowman, astronaut, lighthouse, volcano, waterfall",
       "cat, dog, house, car, sun, moon, tree, fish, apple, ball, hat, shoe, book, chair, phone, star, cloud, cake, cup, key",
       "ninja, pirate, robot, monster, ghost, zombie, dinosaur, unicorn, dragon, alien, superhero, clown, wizard, knight, vampire, witch, troll, fairy, mermaid, cowboy",
       "airplane, backpack, camera, toothbrush, umbrella, skateboard, lighthouse, volcano, popcorn, snowman, lighthouse, guitar, microphone, suitcase, telescope, ferris wheel",
@@ -172,13 +173,19 @@ export const RoomSettings = ({
             handleCustomWords(e.target.value);
           }}
           className="w-full h-full text-sm placeholder:text-sm p-2 resize-none border border-border outline-none"
-          placeholder="Write words to guess, seprated by comma ( , )"
+          placeholder="Example: cat, dog, house, car, sun"
         />
       </div>
       <div className="p-4 border-t border-border flex flex-col gap-3">
-        <Button className="w-full" onClick={onCreateGame}>
-          Create room
-        </Button>
+        {roomUrl ? (
+          <Button className="w-full" variant="outline" onClick={handleBack}>
+            Back
+          </Button>
+        ) : (
+          <Button className="w-full" onClick={onCreateGame}>
+            Create room
+          </Button>
+        )}
 
         {roomUrl && (
           <div className="flex w-full gap-3">
@@ -190,6 +197,14 @@ export const RoomSettings = ({
               className="flex-1 truncate bg-green-600! text-white! hover:opacity-90! hover:bg-green-600!"
               onClick={() => {
                 navigator.clipboard.writeText(roomUrl);
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: crypto.randomUUID(),
+                    from: "client",
+                    message: "Link copied to clip-board",
+                  },
+                ]);
               }}
             >
               Share

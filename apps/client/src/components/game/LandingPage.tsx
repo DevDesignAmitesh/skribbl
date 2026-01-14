@@ -53,6 +53,7 @@ export const LandingPage = ({
           data: {
             roomId,
             name: player.name,
+            userId: player.id,
             character: player.avatarIndex,
           },
         })
@@ -66,6 +67,7 @@ export const LandingPage = ({
         type: MESSAGE_TYPE.JOIN_RANDOM,
         data: {
           name: player.name,
+          userId: player.id,
           character: player.avatarIndex,
           language,
         },

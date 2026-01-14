@@ -1,8 +1,4 @@
-export type ViewState =
-  | "landing"
-  | "create-room"
-  | "joined-room"
-  | "share-room";
+export type ViewState = "landing" | "create-room" | "waiting" | "share-room";
 
 export type chooseState = "chooser" | "choosing" | "guessed";
 
@@ -14,7 +10,7 @@ export interface Player {
 
 export interface ChatMessage {
   id: string;
-  playerName: string;
+  from: string;
   message: string;
 }
 
