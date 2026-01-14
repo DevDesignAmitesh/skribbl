@@ -8,6 +8,7 @@ interface WordSelectionProps {
 
 export const WordSelection = ({ words, onSelectWord }: WordSelectionProps) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const randomWords = getRandomWords(words);
 
   return (
     <div className="bg-card border border-border rounded-lg h-screen flex flex-col items-center justify-center p-8">
@@ -15,7 +16,7 @@ export const WordSelection = ({ words, onSelectWord }: WordSelectionProps) => {
       <p className="text-muted-foreground mb-8">Select one word to draw</p>
 
       <div className="flex gap-6">
-        {words.map((word, index) => (
+        {randomWords.map((word, index) => (
           <button
             key={index}
             onClick={() => onSelectWord(word)}
@@ -41,3 +42,17 @@ export const WordSelection = ({ words, onSelectWord }: WordSelectionProps) => {
     </div>
   );
 };
+
+function getRandomWords(words: string[]): string[] {
+  const arr: string[] = [];
+
+  for (let i = 0; i < words.length; i++) {
+    const randomIndex = Math.floor(Math.random() * words.length)!;
+    const element = words[randomIndex];
+
+    if (arr.length === 3) break;
+    arr.push(element);
+  }
+
+  return arr;
+}

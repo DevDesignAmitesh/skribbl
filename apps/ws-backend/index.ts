@@ -19,8 +19,16 @@ server.on("connection", (ws) => {
     const parsedData = JSON.parse(data.toString());
 
     if (parsedData.type === MESSAGE_TYPE.CREATE_ROOM) {
-      const { players, rounds, draw_time, language, character, userName, id } =
-        parsedData.data;
+      const {
+        players,
+        rounds,
+        draw_time,
+        language,
+        character,
+        userName,
+        id,
+        custom_word,
+      } = parsedData.data;
 
       const roomId = id;
 
@@ -32,6 +40,7 @@ server.on("connection", (ws) => {
           draw_time,
           language,
           right_word: null,
+          custom_word,
         },
         users: [
           {
@@ -70,6 +79,18 @@ server.on("connection", (ws) => {
             type: MESSAGE_TYPE.ERROR,
             data: {
               message: "Room with the give Id not found",
+            },
+          })
+        );
+        return;
+      }
+
+      if (room.users.length === room.room.players) {
+        ws.send(
+          JSON.stringify({
+            type: MESSAGE_TYPE.ERROR,
+            data: {
+              message: "Room is already full",
             },
           })
         );
@@ -119,7 +140,7 @@ server.on("connection", (ws) => {
       // generating random index
       const randomIndex = Math.floor(Math.random() * finalRoom.length)!;
 
-      // finding room from the random index
+      // finding random room from the available rooms
       const availableRoom = finalRoom[randomIndex];
 
       if (!availableRoom) {

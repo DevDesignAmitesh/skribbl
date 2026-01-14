@@ -37,9 +37,6 @@ const strokeWidths = [
   { value: 12, label: "Thick" },
 ];
 
-// Mock words for selection
-const mockWords = ["Elephant", "Bicycle", "Rainbow"];
-
 export const Main = () => {
   const params = useSearchParams();
   const roomId = params.get("roomId");
@@ -52,7 +49,7 @@ export const Main = () => {
     avatarIndex: 2,
   });
 
-  const [view, setView] = useState<ViewState>("share-room");
+  const [view, setView] = useState<ViewState>("landing");
   const [chooseType, setChooseType] = useState<chooseState | null>(null);
 
   const [chooseMessage, setChooseMessage] = useState<string>("");
@@ -77,6 +74,7 @@ export const Main = () => {
     rounds: 2,
     draw_time: 60,
     language: "en",
+    custom_word: [],
   });
 
   // getting used in the drawing canvas comp
@@ -224,6 +222,11 @@ export const Main = () => {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   };
 
+  const handleCustomWords = (words: string) => {
+    const arr = words.split(", ");
+    setRoomSettings((prev) => ({ ...prev, custom_word: arr }));
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -330,7 +333,12 @@ export const Main = () => {
   }
 
   if (chooseType === "chooser") {
-    return <WordSelection words={mockWords} onSelectWord={sendGuessedWord} />;
+    return (
+      <WordSelection
+        words={roomSettings.custom_word}
+        onSelectWord={sendGuessedWord}
+      />
+    );
   }
 
   if (chooseType === "choosing") {
@@ -373,6 +381,7 @@ export const Main = () => {
       centerContent={
         view === "create-room" ? (
           <RoomSettings
+            handleCustomWords={handleCustomWords}
             roomUrl={roomUrl}
             settings={roomSettings}
             onSettingsChange={setRoomSettings}

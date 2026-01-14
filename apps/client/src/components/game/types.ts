@@ -24,6 +24,7 @@ export interface RoomSettings {
   rounds: number;
   draw_time: number;
   language: string;
+  custom_word: string[];
 }
 
 export type tool = "pencil" | "eraser";
