@@ -9,6 +9,7 @@ const rooms: {
 }[] = [];
 
 let round = 0;
+let rightWord = "";
 
 server.on("connection", (ws) => {
   console.log("server started");
@@ -28,6 +29,7 @@ server.on("connection", (ws) => {
         userName,
         id,
         custom_word,
+        latest_round,
         status,
         userId,
       } = parsedData.data;
@@ -41,9 +43,9 @@ server.on("connection", (ws) => {
           rounds,
           draw_time,
           language,
-          right_word: null,
           custom_word,
           status,
+          latest_round,
         },
         users: [
           {
@@ -215,9 +217,9 @@ server.on("connection", (ws) => {
         return;
       }
 
-      const admin = room.users.find((usr) => usr.name === name);
+      const user = room.users.find((usr) => usr.name === name);
 
-      if (!admin) {
+      if (!user) {
         ws.send(
           JSON.stringify({
             type: MESSAGE_TYPE.MESSAGE,
@@ -230,7 +232,7 @@ server.on("connection", (ws) => {
         return;
       }
 
-      if (admin.type !== "admin") {
+      if (user.type !== "admin") {
         ws.send(
           JSON.stringify({
             type: MESSAGE_TYPE.MESSAGE,
@@ -257,22 +259,26 @@ server.on("connection", (ws) => {
       }
 
       if (round === room.users.length * room.room.rounds) {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.GAME_END,
-            data: {
-              message: "game ends",
-              room,
-            },
-          })
-        );
+        room.users.forEach((usr) => {
+          usr.ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.GAME_END,
+              data: {
+                message: "game ends",
+                room,
+              },
+            })
+          );
+        });
         round = 0;
         room.room.status = "ended";
         return;
       }
 
       room.room.startedAt = Date.now();
+      room.room.status = "ongoing";
       round++;
+      room.room.latest_round = round;
 
       const randomIndex = Math.floor(Math.random() * room.users.length)!;
       const chooser = room.users[randomIndex]!;
@@ -359,7 +365,7 @@ server.on("connection", (ws) => {
 
       const right_word = word.trim();
 
-      room.room.right_word = right_word;
+      rightWord = right_word;
 
       // word = 'taj mahal'
 
@@ -451,7 +457,7 @@ server.on("connection", (ws) => {
         return;
       }
 
-      if (word !== room.room.right_word) {
+      if (word !== rightWord) {
         room.users.forEach((usr) => {
           usr.ws.send(
             JSON.stringify({
@@ -466,7 +472,7 @@ server.on("connection", (ws) => {
         return;
       }
 
-      if (word === room.room.right_word) {
+      if (word === rightWord) {
         const submitedAt = Date.now();
         const diff = submitedAt - room.room.startedAt!;
 

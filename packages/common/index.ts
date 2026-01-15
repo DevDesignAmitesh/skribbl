@@ -19,9 +19,9 @@ export interface Room {
   players: number;
   language: string;
   draw_time: number;
+  latest_round: number;
   rounds: number;
   status: roomStatus;
-  right_word: string | null;
   custom_word: string[];
   startedAt?: number;
 }

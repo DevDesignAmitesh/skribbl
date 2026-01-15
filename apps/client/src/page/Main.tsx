@@ -54,6 +54,7 @@ export const Main = () => {
   const [currentPlayer, setCurrentPlayer] = useState<User | null>(null);
 
   const [view, setView] = useState<ViewState>("landing");
+  const viewRef = useRef<ViewState>("landing");
   const [chooseType, setChooseType] = useState<chooseState | null>(null);
 
   const [chooseMessage, setChooseMessage] = useState<string>("");
@@ -78,7 +79,7 @@ export const Main = () => {
     draw_time: 60,
     language: "en",
     custom_word: [],
-    right_word: null,
+    latest_round: 0,
     status: "creating",
   });
 
@@ -146,7 +147,7 @@ export const Main = () => {
       JSON.stringify({
         type: MESSAGE_TYPE.START_GAME,
         data: {
-          roomId: roomSettings.id,
+          roomId: roomId ?? roomSettings.id,
           name: player.name,
         },
       })
@@ -163,7 +164,7 @@ export const Main = () => {
       JSON.stringify({
         type: MESSAGE_TYPE.CHOOSEN_WORD,
         data: {
-          roomId: roomId ?? roomSettings.id ?? room.room?.id,
+          roomId: roomId ?? roomSettings.id,
           word,
           name: player.name,
         },
@@ -247,6 +248,7 @@ export const Main = () => {
 
   const handleBack = () => {
     setView("landing");
+    viewRef.current = "landing";
     // TODO: we should send message back to server for deleting the room
     // when the room will be deleting, the users will be also get notified and we can setView("landing")
   };
@@ -291,9 +293,7 @@ export const Main = () => {
       }
 
       if (parsedData.type === MESSAGE_TYPE.JOIN_ROOM) {
-        const { room } = parsedData.data as {
-          room: { room: Room; users: User[] };
-        };
+        const { room } = parsedData.data;
 
         setRoom(room);
         if (room.room.status === "creating") {
@@ -317,14 +317,14 @@ export const Main = () => {
       }
 
       if (parsedData.type === MESSAGE_TYPE.YOU_ARE_CHOOSER) {
-        const { room, round } = parsedData.data;
+        const { room } = parsedData.data;
         setRoom(room);
         setView("share-room");
         setChooseType("chooser");
       }
 
       if (parsedData.type === MESSAGE_TYPE.SOMEONE_CHOOSING) {
-        const { room, message, round } = parsedData.data;
+        const { room, message } = parsedData.data;
         setRoom(room);
         setChooseMessage(message);
         setView("share-room");
@@ -336,11 +336,12 @@ export const Main = () => {
         const { totalLength } = parsedData.data;
         setChooseType(null);
         setTotalLength(totalLength);
+        setView("share-room");
       }
 
       if (parsedData.type === MESSAGE_TYPE.MESSAGE) {
         const { message, from } = parsedData.data;
-        if (view === "landing") {
+        if (viewRef.current === "landing") {
           toast.error(from, {
             description: message,
           });
@@ -374,7 +375,7 @@ export const Main = () => {
         lastPosRef.current = to;
       }
     };
-  }, [view, ws]);
+  }, [ws]);
 
   // setCurrentPlayer
   useEffect(() => {
@@ -420,15 +421,36 @@ export const Main = () => {
     );
   }
 
-  return (
-    <RoomLayout
-      players={room.users}
-      messages={messages}
-      onSendMessage={handleSendMessage}
-      currentPlayerId={player.id}
-      centerContent={
-        view === "create-room" ||
-        (currentPlayer && currentPlayer.type === "admin") ? (
+  if (view === "waiting" && currentPlayer && currentPlayer.type === "member") {
+    // TODO: we can show the preview of room setting instead of this blank screen
+    // it is easy to add just pass this condition => currentPlayer && currentPlayer.type === "admin"
+    // and render the inputs disability accordingly ( you know this.... )
+    return (
+      <RoomLayout
+        players={room.users}
+        messages={messages}
+        onSendMessage={handleSendMessage}
+        currentPlayerId={player.id}
+        centerContent={
+          <div className="bg-card border border-border text-muted-foreground rounded-lg h-full    flex justify-center items-center">
+            waiting for the admin to start the game
+          </div>
+        }
+      />
+    );
+  }
+
+  if (
+    view === "create-room" ||
+    (currentPlayer && currentPlayer.type === "admin")
+  ) {
+    return (
+      <RoomLayout
+        players={room.users}
+        messages={messages}
+        onSendMessage={handleSendMessage}
+        currentPlayerId={player.id}
+        centerContent={
           <RoomSettings
             setMessages={setMessages}
             handleBack={handleBack}
@@ -439,19 +461,24 @@ export const Main = () => {
             onCreateGame={handleCreateRoom}
             onStartGame={handleStartGame}
           />
-        ) : view === "waiting" ? (
-          // TODO: we can show the preview of room setting instead of this blank screen
-          // it is easy to add just pass this condition => currentPlayer && currentPlayer.type === "admin"
-          // and render the inputs disability accordingly ( you know this.... )
-          <div className="bg-card border border-border text-muted-foreground rounded-lg h-full flex justify-center items-center">
-            waiting for the admin to start the game
-          </div>
-        ) : (
+        }
+      />
+    );
+  }
+
+  if (view === "share-room") {
+    return (
+      <RoomLayout
+        players={room.users}
+        messages={messages}
+        onSendMessage={handleSendMessage}
+        currentPlayerId={player.id}
+        centerContent={
           <DrawingCanvas
-            currentRound={3}
-            drawTime={60}
-            onTimeUp={() => {}}
-            totalRounds={10}
+            currentRound={room.room?.latest_round ?? 0}
+            drawTime={room.room?.draw_time ?? 0}
+            onTimeUp={handleStartGame}
+            totalRounds={room.room?.rounds ?? 0}
             // totalLength={[4, 5]}
             totalLength={totalLength}
             canvasRef={canvasRef}
@@ -468,8 +495,8 @@ export const Main = () => {
             strokeWidths={strokeWidths}
             tool={tool}
           />
-        )
-      }
-    />
-  );
+        }
+      />
+    );
+  }
 };
