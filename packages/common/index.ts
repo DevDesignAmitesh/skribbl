@@ -28,6 +28,8 @@ export interface Room {
 
 export const MESSAGE_TYPE = {
   CREATE_ROOM: "CREATE_ROOM",
+  LEFT: "LEFT",
+  LEAVE: "LEAVE",
   JOIN_ROOM: "JOIN_ROOM",
   JOIN_RANDOM: "JOIN_RANDOM",
   MESSAGE: "MESSAGE",

@@ -1,9 +1,14 @@
 import { type Room, type User, MESSAGE_TYPE } from "@repo/common/common";
-import { WebSocketServer } from "ws";
+import WebSocket, { WebSocketServer } from "ws";
+
+interface ExtendedWebSocket extends WebSocket {
+  userId: string;
+  roomId: string;
+}
 
 const server = new WebSocketServer({ port: Number(process.env.PORT) });
 
-const rooms: {
+let rooms: {
   room: Room;
   users: User[];
 }[] = [];
@@ -11,7 +16,7 @@ const rooms: {
 let round = 0;
 let rightWord = "";
 
-server.on("connection", (ws) => {
+server.on("connection", (ws: ExtendedWebSocket) => {
   console.log("server started");
 
   ws.on("error", (err) => console.log(err));
@@ -36,6 +41,9 @@ server.on("connection", (ws) => {
 
       const roomId = id;
 
+      ws.roomId = id;
+      console.log(ws.roomId, " while creating room");
+      ws.userId = userId;
       rooms.push({
         room: {
           id: roomId,
@@ -117,6 +125,9 @@ server.on("connection", (ws) => {
         return;
       }
 
+      ws.userId = userId;
+      ws.roomId = roomId;
+
       room.users.push({
         id: userId,
         name,
@@ -176,6 +187,9 @@ server.on("connection", (ws) => {
         );
         return;
       }
+
+      ws.userId = userId;
+      ws.roomId = availableRoom.room.id;
 
       availableRoom.users.push({
         id: userId,
@@ -542,6 +556,57 @@ server.on("connection", (ws) => {
           })
         );
       });
+    }
+  });
+
+  ws.on("close", () => {
+    console.log("ws.roomId ", ws.roomId);
+    console.log("ws.userId ", ws.userId);
+    if (rooms.length !== 0) {
+      console.log(rooms);
+      console.log("left");
+      // if user left, we will find the room
+      const room = rooms.find((rm) => rm.room.id === ws.roomId);
+      if (room) {
+        console.log("room found ", room.room.id);
+        // if room found, then will find the user
+        const user = room.users.find((usr) => usr.id === ws.userId);
+        if (user) {
+          // TODO: we have to think how to handle this, like if the user is admin, then
+          // should we delete the whole room or should we assign admin role to someone else
+
+          console.log("user found ", user.name);
+          // if the user found, will delete that user out
+          const filterdUsers = room.users.filter((usr) => usr.id !== ws.userId);
+
+          console.log("filterdUsers ", filterdUsers.length);
+
+          // if users left 0 then delete the room too
+          if (filterdUsers.length === 0) {
+            const filteredRooms = rooms.filter(
+              (rm) => rm.room.id !== room.room.id
+            );
+            rooms = filteredRooms;
+          } else {
+            // else will set the room's user to the filtered user
+            room.users = filterdUsers;
+
+            room.users.forEach((usr) => {
+              usr.ws.send(
+                JSON.stringify({
+                  type: MESSAGE_TYPE.LEFT,
+                  data: {
+                    message: `${user.name} left the room`,
+                    room,
+                    from: "server",
+                  },
+                })
+              );
+            });
+          }
+          console.log("final rooms ", rooms);
+        }
+      }
     }
   });
 });

@@ -274,6 +274,10 @@ export const Main = () => {
   useEffect(() => {
     const ws = new WebSocket(WS_URL);
     setWs(ws);
+
+    return () => {
+      ws.close()
+    };
   }, []);
 
   // handle websocket messages (INCOMING)
@@ -373,6 +377,24 @@ export const Main = () => {
         ctx.stroke();
 
         lastPosRef.current = to;
+      }
+
+      if (parsedData.type === MESSAGE_TYPE.LEAVE) {
+        toast.info("room deleted");
+        window.location.reload();
+      }
+
+      if (parsedData.type === MESSAGE_TYPE.LEFT) {
+        const { message, room, from } = parsedData.data;
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            message,
+            from,
+          },
+        ]);
+        setRoom(room);
       }
     };
   }, [ws]);
