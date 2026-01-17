@@ -34,7 +34,6 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         userName,
         id,
         custom_word,
-        latest_round,
         status,
         userId,
       } = parsedData.data;
@@ -53,7 +52,6 @@ server.on("connection", (ws: ExtendedWebSocket) => {
           language,
           custom_word,
           status,
-          latest_round,
         },
         users: [
           {
@@ -77,7 +75,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
             roomUrl: `${process.env.FRONTEND_URL}?roomId=${roomId}`,
             room,
           },
-        })
+        }),
       );
     }
 
@@ -94,7 +92,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
               message: "Room with the give Id not found",
               from: "server",
             },
-          })
+          }),
         );
         return;
       }
@@ -107,7 +105,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
               message: "Room is already full",
               from: "server",
             },
-          })
+          }),
         );
         return;
       }
@@ -120,7 +118,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
               message: "Room already ended",
               from: "server",
             },
-          })
+          }),
         );
         return;
       }
@@ -145,8 +143,8 @@ server.on("connection", (ws: ExtendedWebSocket) => {
             data: {
               room,
             },
-          })
-        )
+          }),
+        ),
       );
     }
 
@@ -183,7 +181,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
               message: "There are no available room at this moment",
               from: "server",
             },
-          })
+          }),
         );
         return;
       }
@@ -208,13 +206,13 @@ server.on("connection", (ws: ExtendedWebSocket) => {
             data: {
               room: availableRoom,
             },
-          })
-        )
+          }),
+        ),
       );
     }
 
     if (parsedData.type === MESSAGE_TYPE.START_GAME) {
-      const { roomId, name } = parsedData.data;
+      const { roomId, userId } = parsedData.data;
 
       const room = rooms.find((rm) => rm.room.id === roomId);
 
@@ -226,35 +224,22 @@ server.on("connection", (ws: ExtendedWebSocket) => {
               message: "Room with the give Id not found",
               from: "server",
             },
-          })
+          }),
         );
         return;
       }
 
-      const user = room.users.find((usr) => usr.name === name);
+      const user = room.users.find((usr) => usr.id === userId);
 
       if (!user) {
         ws.send(
           JSON.stringify({
             type: MESSAGE_TYPE.MESSAGE,
             data: {
-              message: "User with the give name not found",
+              message: "User with the give id not found",
               from: "server",
             },
-          })
-        );
-        return;
-      }
-
-      if (user.type !== "admin") {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              message: "You are not admin",
-              from: "server",
-            },
-          })
+          }),
         );
         return;
       }
@@ -267,7 +252,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
               message: "you need atleast 2 players to start the game",
               from: "server",
             },
-          })
+          }),
         );
         return;
       }
@@ -281,7 +266,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
                 message: "game ends",
                 room,
               },
-            })
+            }),
           );
         });
         round = 0;
@@ -291,7 +276,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
 
       room.room.startedAt = Date.now();
       room.room.status = "ongoing";
-      round++;
+      round = round + 1;
       room.room.latest_round = round;
 
       const randomIndex = Math.floor(Math.random() * room.users.length)!;
@@ -314,7 +299,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
             room,
             round,
           },
-        })
+        }),
       );
 
       newUsers.forEach((usr) => {
@@ -326,13 +311,13 @@ server.on("connection", (ws: ExtendedWebSocket) => {
               round,
               message: `${chooser.name} is choosing`,
             },
-          })
+          }),
         );
       });
     }
 
     if (parsedData.type === MESSAGE_TYPE.CHOOSEN_WORD) {
-      const { roomId, word, name } = parsedData.data;
+      const { roomId, word, userId } = parsedData.data;
 
       const room = rooms.find((rm) => rm.room.id === roomId);
 
@@ -344,22 +329,22 @@ server.on("connection", (ws: ExtendedWebSocket) => {
               message: "Room with the give Id not found",
               from: "server",
             },
-          })
+          }),
         );
         return;
       }
 
-      const user = room.users.find((usr) => usr.name === name);
+      const user = room.users.find((usr) => usr.id === userId);
 
       if (!user) {
         ws.send(
           JSON.stringify({
             type: MESSAGE_TYPE.MESSAGE,
             data: {
-              message: "User with the give name not found",
+              message: "User with the give id not found",
               from: "server",
             },
-          })
+          }),
         );
         return;
       }
@@ -372,7 +357,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
               message: "You are not the chooser",
               from: "server",
             },
-          })
+          }),
         );
         return;
       }
@@ -406,13 +391,13 @@ server.on("connection", (ws: ExtendedWebSocket) => {
             data: {
               totalLength,
             },
-          })
+          }),
         );
       });
     }
 
     if (parsedData.type === MESSAGE_TYPE.GUESS_WORD) {
-      const { roomId, name, word } = parsedData.data;
+      const { roomId, userId, word } = parsedData.data;
 
       const room = rooms.find((rm) => rm.room.id === roomId);
 
@@ -424,22 +409,22 @@ server.on("connection", (ws: ExtendedWebSocket) => {
               message: "room not found with the given id",
               from: "server",
             },
-          })
+          }),
         );
         return;
       }
 
-      const user = room.users.find((usr) => usr.name === name);
+      const user = room.users.find((usr) => usr.id === userId);
 
       if (!user) {
         ws.send(
           JSON.stringify({
             type: MESSAGE_TYPE.MESSAGE,
             data: {
-              message: "user not found with the given name",
+              message: "user not found with the given id",
               from: "server",
             },
-          })
+          }),
         );
         return;
       }
@@ -452,7 +437,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
               message: "chooser cannot guess word",
               from: "server",
             },
-          })
+          }),
         );
         return;
       }
@@ -466,7 +451,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
                 "you already guessed word or wait for new round to get started",
               from: "server",
             },
-          })
+          }),
         );
         return;
       }
@@ -480,7 +465,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
                 message: word,
                 from: user.name,
               },
-            })
+            }),
           );
         });
         return;
@@ -507,8 +492,9 @@ server.on("connection", (ws: ExtendedWebSocket) => {
               data: {
                 message: `${usr.ws === ws ? "You" : usr.name} guessed the right word`,
                 from: usr.ws === ws ? "You" : usr.name,
+                room,
               },
-            })
+            }),
           );
         });
       }
@@ -516,7 +502,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
 
     if (parsedData.type === MESSAGE_TYPE.DRAWING) {
       // path?: { x: number; y: number }[];
-      const { roomId, name, payload } = parsedData.data;
+      const { roomId, userId, payload } = parsedData.data;
 
       const room = rooms.find((rm) => rm.room.id === roomId);
 
@@ -527,21 +513,21 @@ server.on("connection", (ws: ExtendedWebSocket) => {
             data: {
               message: "room not found with the given Id",
             },
-          })
+          }),
         );
         return;
       }
 
-      const user = room.users.find((usr) => usr.name === name);
+      const user = room.users.find((usr) => usr.id === userId);
 
       if (!user) {
         ws.send(
           JSON.stringify({
             type: MESSAGE_TYPE.MESSAGE,
             data: {
-              message: "user not found with the given name",
+              message: "user not found with the given id",
             },
-          })
+          }),
         );
         return;
       }
@@ -553,13 +539,15 @@ server.on("connection", (ws: ExtendedWebSocket) => {
             data: {
               payload,
             },
-          })
+          }),
         );
       });
     }
   });
 
   ws.on("close", () => {
+    round = 0;
+    rightWord = "";
     console.log("ws.roomId ", ws.roomId);
     console.log("ws.userId ", ws.userId);
     if (rooms.length !== 0) {
@@ -584,7 +572,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
           // if users left 0 then delete the room too
           if (filterdUsers.length === 0) {
             const filteredRooms = rooms.filter(
-              (rm) => rm.room.id !== room.room.id
+              (rm) => rm.room.id !== room.room.id,
             );
             rooms = filteredRooms;
           } else {
@@ -600,7 +588,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
                     room,
                     from: "server",
                   },
-                })
+                }),
               );
             });
           }

@@ -1,1 +1,1 @@
-skribble clone
+- work on the game logic (like how the game is running)

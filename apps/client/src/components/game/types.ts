@@ -1,3 +1,5 @@
+import { userStatus, userType } from "@repo/common/common";
+
 export type ViewState = "landing" | "create-room" | "waiting" | "share-room";
 
 export type chooseState = "chooser" | "choosing" | "guessed";
@@ -6,6 +8,8 @@ export interface Player {
   id: string;
   name: string;
   avatarIndex: number;
+  type?: userType;
+  status?: userStatus;
 }
 
 export interface ChatMessage {

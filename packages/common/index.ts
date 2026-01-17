@@ -19,7 +19,7 @@ export interface Room {
   players: number;
   language: string;
   draw_time: number;
-  latest_round: number;
+  latest_round?: number;
   rounds: number;
   status: roomStatus;
   custom_word: string[];
@@ -29,7 +29,6 @@ export interface Room {
 export const MESSAGE_TYPE = {
   CREATE_ROOM: "CREATE_ROOM",
   LEFT: "LEFT",
-  LEAVE: "LEAVE",
   JOIN_ROOM: "JOIN_ROOM",
   JOIN_RANDOM: "JOIN_RANDOM",
   MESSAGE: "MESSAGE",
