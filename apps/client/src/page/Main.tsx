@@ -52,6 +52,7 @@ export const Main = () => {
   });
 
   const [view, setView] = useState<ViewState>("landing");
+  const viewRef = useRef<ViewState>("landing");
   const [chooseType, setChooseType] = useState<chooseState | null>(null);
 
   const [chooseMessage, setChooseMessage] = useState<string>("");
@@ -87,12 +88,17 @@ export const Main = () => {
   const [tool, setTool] = useState<tool>("pencil");
   const lastPosRef = useRef<{ x: number; y: number } | null>(null);
 
+  const handleSetView = (view: ViewState) => {
+    setView(view);
+    viewRef.current = view;
+  };
+
   const createRoom = () => {
     if (!player.name.trim()) {
       alert("Enter your name");
       return;
     }
-    setView("create-room");
+    handleSetView("create-room");
   };
 
   const handleSendMessage = (message: string) => {
@@ -243,9 +249,9 @@ export const Main = () => {
   };
 
   const handleBack = () => {
-    setView("landing");
+    handleSetView("landing");
     // TODO: we should send message back to server for deleting the room
-    // when the room will be deleting, the users will be also get notified and we can setView("landing")
+    // when the room will be deleting, the users will be also get notified and we can handleSetView("landing")
   };
 
   // for setting canvas details
@@ -292,31 +298,85 @@ export const Main = () => {
       }
 
       if (parsedData.type === MESSAGE_TYPE.JOIN_ROOM) {
-        const { room } = parsedData.data;
+        const { room } = parsedData.data as {
+          room: { room: Room; users: User[] };
+        };
         setRoom(room);
+        const user = room.users.find((usr: User) => usr.id === player.id);
+        if (!user) return;
+        if (user.type === "admin") return;
+        
+        if (room.room.status === "creating") {
+          handleSetView("waiting");
+        } else if (room.room.status === "ongoing") {
+          handleSetView("share-room");
+        } else if (room.room.status === "ended") {
+          alert("room ended");
+          window.location.reload();
+        }
+
+        setPlayer((prev) => ({
+          ...prev,
+          status: user.status,
+        }));
+
+        // we have to find the user
+        // we have to get the room status
+        // if status is creating then wating screen else if shared-room
+        // have to update the status locally
       }
 
       if (parsedData.type === MESSAGE_TYPE.JOIN_RANDOM) {
-        const { room } = parsedData.data;
+        const { room } = parsedData.data as {
+          room: { room: Room; users: User[] };
+        };
         setRoom(room);
+        const user = room.users.find((usr: User) => usr.id === player.id);
+        if (!user) return;
+        if (room.room.status === "creating") {
+          handleSetView("waiting");
+        } else if (room.room.status === "ongoing") {
+          handleSetView("share-room");
+        } else if (room.room.status === "ended") {
+          alert("room ended");
+          window.location.reload();
+        }
+
+        setPlayer((prev) => ({
+          ...prev,
+          status: user.status,
+        }));
       }
 
       if (parsedData.type === MESSAGE_TYPE.YOU_ARE_CHOOSER) {
         const { room } = parsedData.data;
-        setRoom(room);
+        const user = room.users.find((usr: User) => usr.id === player.id);
+        if (!user) return;
+        setChooseType("chooser");
+        setPlayer((prev) => ({
+          ...prev,
+          status: user.status,
+        }));
       }
 
       if (parsedData.type === MESSAGE_TYPE.SOMEONE_CHOOSING) {
         const { room, message } = parsedData.data;
-        setRoom(room);
+        const user = room.users.find((usr: User) => usr.id === player.id);
+        if (!user) return;
+        setChooseType("choosing");
+        setPlayer((prev) => ({
+          ...prev,
+          status: user.status,
+        }));
         setChooseMessage(message);
       }
 
       if (parsedData.type === MESSAGE_TYPE.CHOOSEN_WORD) {
-        // string[]
+        // totalLength: number[]
         const { totalLength } = parsedData.data;
         setChooseType(null);
         setTotalLength(totalLength);
+        handleSetView("share-room");
       }
 
       if (parsedData.type === MESSAGE_TYPE.MESSAGE) {
@@ -324,7 +384,7 @@ export const Main = () => {
         if (room) {
           setRoom(room);
         }
-        if (view === "landing") {
+        if (viewRef.current === "landing") {
           toast.error(from, {
             description: message,
           });
@@ -371,32 +431,12 @@ export const Main = () => {
         setRoom(room);
       }
     };
-  }, [ws, view]);
+  }, [ws]);
 
   useEffect(() => {
     console.log("room", room);
     const user = room.users.find((usr) => usr.id === player.id);
     if (!user) return;
-
-    if (user.type === "member") {
-      if (room?.room?.status === "creating") {
-        setView("waiting");
-      } else if (room?.room?.status === "ongoing") {
-        setView("share-room");
-      }
-    } else if (user.type === "admin") {
-      if (room?.room?.status === "ongoing") {
-        setView("share-room");
-      }
-    }
-
-    if (user.status === "chooser") {
-      setView("share-room");
-      setChooseType("chooser");
-    } else if (user.status === "guesser") {
-      setView("share-room");
-      setChooseType("choosing");
-    }
 
     setPlayer((prev) => ({
       ...prev,
@@ -405,17 +445,16 @@ export const Main = () => {
     }));
   }, [room]);
 
-  useEffect(() => {
-    if (totalLength.length === 0) return;
-    setView("share-room");
-  }, [totalLength]);
-
   const isAdmin = player?.type === "admin";
   const isMember = player?.type === "member";
   const isChooser = player?.status === "chooser";
 
   if (!ws) {
-    return <div>Connecting to server....</div>;
+    return (
+      <div className="z-100 inset-0 bg-card border border-border text-foreground rounded-lg h-screen flex justify-center items-center">
+        Connecting to server....
+      </div>
+    );
   }
 
   if (chooseType === "chooser") {

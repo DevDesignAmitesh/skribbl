@@ -17,10 +17,7 @@ let round = 0;
 let rightWord = "";
 
 server.on("connection", (ws: ExtendedWebSocket) => {
-  console.log("server started");
-
-  ws.on("error", (err) => console.log(err));
-
+  console.log("connected");
   ws.on("message", (data) => {
     const parsedData = JSON.parse(data.toString());
 
@@ -41,8 +38,8 @@ server.on("connection", (ws: ExtendedWebSocket) => {
       const roomId = id;
 
       ws.roomId = id;
-      console.log(ws.roomId, " while creating room");
       ws.userId = userId;
+
       rooms.push({
         room: {
           id: roomId,
@@ -276,7 +273,9 @@ server.on("connection", (ws: ExtendedWebSocket) => {
 
       room.room.startedAt = Date.now();
       room.room.status = "ongoing";
+      console.log("pre round ", round);
       round = round + 1;
+      console.log("post round ", round);
       room.room.latest_round = round;
 
       const randomIndex = Math.floor(Math.random() * room.users.length)!;
@@ -414,6 +413,19 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         return;
       }
 
+      if (room.room.status === "creating" || room.room.status === "ended") {
+        ws.send(
+          JSON.stringify({
+            type: MESSAGE_TYPE.MESSAGE,
+            data: {
+              message: "room is ended or not started yet",
+              from: "server",
+            },
+          }),
+        );
+        return;
+      }
+
       const user = room.users.find((usr) => usr.id === userId);
 
       if (!user) {
@@ -511,6 +523,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
           JSON.stringify({
             type: MESSAGE_TYPE.MESSAGE,
             data: {
+              from: "server",
               message: "room not found with the given Id",
             },
           }),
@@ -525,6 +538,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
           JSON.stringify({
             type: MESSAGE_TYPE.MESSAGE,
             data: {
+              from: "server",
               message: "user not found with the given id",
             },
           }),
@@ -548,26 +562,18 @@ server.on("connection", (ws: ExtendedWebSocket) => {
   ws.on("close", () => {
     round = 0;
     rightWord = "";
-    console.log("ws.roomId ", ws.roomId);
-    console.log("ws.userId ", ws.userId);
     if (rooms.length !== 0) {
-      console.log(rooms);
-      console.log("left");
       // if user left, we will find the room
       const room = rooms.find((rm) => rm.room.id === ws.roomId);
       if (room) {
-        console.log("room found ", room.room.id);
         // if room found, then will find the user
         const user = room.users.find((usr) => usr.id === ws.userId);
         if (user) {
           // TODO: we have to think how to handle this, like if the user is admin, then
           // should we delete the whole room or should we assign admin role to someone else
 
-          console.log("user found ", user.name);
           // if the user found, will delete that user out
           const filterdUsers = room.users.filter((usr) => usr.id !== ws.userId);
-
-          console.log("filterdUsers ", filterdUsers.length);
 
           // if users left 0 then delete the room too
           if (filterdUsers.length === 0) {
@@ -592,7 +598,6 @@ server.on("connection", (ws: ExtendedWebSocket) => {
               );
             });
           }
-          console.log("final rooms ", rooms);
         }
       }
     }
