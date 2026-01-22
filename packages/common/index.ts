@@ -26,7 +26,23 @@ export interface Room {
   startedAt?: number;
 }
 
-export const MESSAGE_TYPE = {
+export type MESSAGE_TYPE =
+  | "CREATE_ROOM"
+  | "LEFT"
+  | "JOIN_ROOM"
+  | "GAME_END"
+  | "START_GAME"
+  | "JOIN_RANDOM"
+  | "DRAWING"
+  | "START_GUESS"
+  | "GUESS_WORD"
+  | "CHOOSEN_WORD"
+  | "YOU_ARE_CHOOSER"
+  | "SOMEONE_CHOOSING"
+  | "CLEAR_CANVAS"
+  | "MESSAGE";
+
+export const MESSAGE_TYPE: Record<MESSAGE_TYPE, MESSAGE_TYPE> = {
   CREATE_ROOM: "CREATE_ROOM",
   LEFT: "LEFT",
   JOIN_ROOM: "JOIN_ROOM",
@@ -40,4 +56,5 @@ export const MESSAGE_TYPE = {
   CHOOSEN_WORD: "CHOOSEN_WORD",
   YOU_ARE_CHOOSER: "YOU_ARE_CHOOSER",
   SOMEONE_CHOOSING: "SOMEONE_CHOOSING",
+  CLEAR_CANVAS: "CLEAR_CANVAS",
 };

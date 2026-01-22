@@ -14,7 +14,7 @@ import { MESSAGE_TYPE } from "@repo/common/common";
 import { Player } from "./types";
 
 interface LandingPageProps {
-  createRoom: () => void;
+  navigateToRoom: () => void;
   ws: WebSocket;
   roomId: string | null;
   player: Player;
@@ -32,7 +32,7 @@ const languages = [
 ];
 
 export const LandingPage = ({
-  createRoom,
+  navigateToRoom,
   ws,
   roomId,
   player,
@@ -56,7 +56,7 @@ export const LandingPage = ({
             userId: player.id,
             character: player.avatarIndex,
           },
-        })
+        }),
       );
 
       return;
@@ -71,7 +71,7 @@ export const LandingPage = ({
           character: player.avatarIndex,
           language,
         },
-      })
+      }),
     );
   };
 
@@ -153,7 +153,11 @@ export const LandingPage = ({
           >
             Join Room
           </Button>
-          <Button onClick={createRoom} className="w-full" variant={"outline"}>
+          <Button
+            onClick={navigateToRoom}
+            className="w-full"
+            variant={"outline"}
+          >
             Create Private Room
           </Button>
         </div>

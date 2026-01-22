@@ -1,5 +1,3 @@
-// TODO: we can added messages from server if some one joins/left or room is terminated and etc
-
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -20,25 +18,6 @@ import { useSearchParams } from "next/navigation";
 import { WordSelection } from "@/components/game/WordSelection";
 import { toast } from "sonner";
 
-const colors = [
-  "#000000", // Black
-  "#FFFFFF", // White
-  "#EF4444", // Red
-  "#F97316", // Orange
-  "#EAB308", // Yellow
-  "#22C55E", // Green
-  "#3B82F6", // Blue
-  "#8B5CF6", // Purple
-  "#EC4899", // Pink
-  "#78716C", // Brown
-];
-
-const strokeWidths = [
-  { value: 2, label: "Thin" },
-  { value: 6, label: "Medium" },
-  { value: 12, label: "Thick" },
-];
-
 export const Main = () => {
   const params = useSearchParams();
   const roomId = params.get("roomId");
@@ -54,22 +33,15 @@ export const Main = () => {
   const [view, setView] = useState<ViewState>("landing");
   const viewRef = useRef<ViewState>("landing");
   const [chooseType, setChooseType] = useState<chooseState | null>(null);
-
   const [chooseMessage, setChooseMessage] = useState<string>("");
-
   const [totalLength, setTotalLength] = useState<number[]>([]);
-
   const [room, setRoom] = useState<{ room: Room | null; users: User[] }>({
     room: null,
     users: [],
   });
-
   const [roomUrl, setRoomUrl] = useState<string | null>(null);
-
   const [ws, setWs] = useState<WebSocket | null>(null);
-
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-
   const [roomSettings, setRoomSettings] = useState<Room>({
     id: crypto.randomUUID().slice(0, 7),
     players: 2,
@@ -84,7 +56,7 @@ export const Main = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentColor, setCurrentColor] = useState("#000000");
-  const [strokeWidth, setStrokeWidth] = useState(6);
+  const [strokeWidth, setStrokeWidth] = useState(2);
   const [tool, setTool] = useState<tool>("pencil");
   const lastPosRef = useRef<{ x: number; y: number } | null>(null);
 
@@ -93,7 +65,7 @@ export const Main = () => {
     viewRef.current = view;
   };
 
-  const createRoom = () => {
+  const navigateToRoom = () => {
     if (!player.name.trim()) {
       alert("Enter your name");
       return;
@@ -102,7 +74,9 @@ export const Main = () => {
   };
 
   const handleSendMessage = (message: string) => {
-    ws?.send(
+    if (!ws) return;
+
+    ws.send(
       JSON.stringify({
         type: MESSAGE_TYPE.GUESS_WORD,
         data: {
@@ -115,6 +89,8 @@ export const Main = () => {
   };
 
   const handleCreateRoom = () => {
+    if (!ws) return;
+
     if (roomSettings.custom_word.length <= 3) {
       setMessages((prev) => [
         ...prev,
@@ -127,7 +103,6 @@ export const Main = () => {
 
       return;
     }
-    if (!ws) return;
 
     ws.send(
       JSON.stringify({
@@ -157,7 +132,9 @@ export const Main = () => {
   };
 
   const sendGuessedWord = (word: string) => {
-    if (!ws || !word.trim()) {
+    if (!ws) return;
+
+    if (!word.trim()) {
       alert("Choose word first");
       return;
     }
@@ -235,17 +212,13 @@ export const Main = () => {
   };
 
   const clearCanvas = () => {
-    const canvas = canvasRef.current;
-    const ctx = getContext();
-    if (!canvas || !ctx) return;
+    if (!ws) return;
 
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  };
-
-  const handleCustomWords = (words: string) => {
-    const arr = words.split(", ");
-    setRoomSettings((prev) => ({ ...prev, custom_word: arr }));
+    ws.send(
+      JSON.stringify({
+        type: MESSAGE_TYPE.CLEAR_CANVAS,
+      }),
+    );
   };
 
   const handleBack = () => {
@@ -253,23 +226,6 @@ export const Main = () => {
     // TODO: we should send message back to server for deleting the room
     // when the room will be deleting, the users will be also get notified and we can handleSetView("landing")
   };
-
-  // for setting canvas details
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    // Set canvas size
-    canvas.width = 600;
-    canvas.height = 400;
-
-    // Fill with white background
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }, []);
 
   // handle websocket connection
   useEffect(() => {
@@ -305,7 +261,7 @@ export const Main = () => {
         const user = room.users.find((usr: User) => usr.id === player.id);
         if (!user) return;
         if (user.type === "admin") return;
-        
+
         if (room.room.status === "creating") {
           handleSetView("waiting");
         } else if (room.room.status === "ongoing") {
@@ -318,6 +274,7 @@ export const Main = () => {
         setPlayer((prev) => ({
           ...prev,
           status: user.status,
+          type: user.type,
         }));
 
         // we have to find the user
@@ -345,6 +302,7 @@ export const Main = () => {
         setPlayer((prev) => ({
           ...prev,
           status: user.status,
+          type: user.type,
         }));
       }
 
@@ -418,6 +376,15 @@ export const Main = () => {
         lastPosRef.current = to;
       }
 
+      if (parsedData.type === MESSAGE_TYPE.CLEAR_CANVAS) {
+        const canvas = canvasRef.current;
+        const ctx = getContext();
+        if (!canvas || !ctx) return;
+
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
       if (parsedData.type === MESSAGE_TYPE.LEFT) {
         const { message, room, from } = parsedData.data;
         setMessages((prev) => [
@@ -433,17 +400,18 @@ export const Main = () => {
     };
   }, [ws]);
 
-  useEffect(() => {
-    console.log("room", room);
-    const user = room.users.find((usr) => usr.id === player.id);
-    if (!user) return;
+  // TODO: lets see if we need it or not...
+  // useEffect(() => {
+  //   console.log("room", room);
+  //   const user = room.users.find((usr) => usr.id === player.id);
+  //   if (!user) return;
 
-    setPlayer((prev) => ({
-      ...prev,
-      type: user.type,
-      status: user.status,
-    }));
-  }, [room]);
+  //   setPlayer((prev) => ({
+  //     ...prev,
+  //     type: user.type,
+  //     status: user.status,
+  //   }));
+  // }, [room]);
 
   const isAdmin = player?.type === "admin";
   const isMember = player?.type === "member";
@@ -487,7 +455,7 @@ export const Main = () => {
         setPlayer={setPlayer}
         roomId={roomId}
         ws={ws}
-        createRoom={createRoom}
+        navigateToRoom={navigateToRoom}
       />
     );
   } else if (view === "waiting" && isMember) {
@@ -520,7 +488,6 @@ export const Main = () => {
           <RoomSettings
             setMessages={setMessages}
             handleBack={handleBack}
-            handleCustomWords={handleCustomWords}
             roomUrl={roomUrl}
             settings={roomSettings}
             onSettingsChange={setRoomSettings}
@@ -549,7 +516,6 @@ export const Main = () => {
             totalLength={totalLength}
             canvasRef={canvasRef}
             clearCanvas={clearCanvas}
-            colors={colors}
             currentColor={currentColor}
             draw={draw}
             setCurrentColor={setCurrentColor}
@@ -558,7 +524,6 @@ export const Main = () => {
             startDrawing={startDrawing}
             stopDrawing={stopDrawing}
             strokeWidth={strokeWidth}
-            strokeWidths={strokeWidths}
             tool={tool}
           />
         }

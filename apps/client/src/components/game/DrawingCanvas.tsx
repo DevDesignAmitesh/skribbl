@@ -1,4 +1,4 @@
-import React, { RefObject } from "react";
+import React, { RefObject, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Pencil, Eraser, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -9,8 +9,6 @@ interface DrawingCanvasProps {
   tool: tool;
   setTool: React.Dispatch<React.SetStateAction<tool>>;
   clearCanvas: () => void;
-  colors: string[];
-  strokeWidths: { value: number; label: string }[];
   setCurrentColor: React.Dispatch<React.SetStateAction<string>>;
   currentColor: string;
   isChooser: boolean;
@@ -31,7 +29,6 @@ export const DrawingCanvas = ({
   canvasRef,
   clearCanvas,
   isChooser,
-  colors,
   currentColor,
   draw,
   setCurrentColor,
@@ -40,7 +37,6 @@ export const DrawingCanvas = ({
   startDrawing,
   stopDrawing,
   strokeWidth,
-  strokeWidths,
   tool,
   totalLength,
   currentRound,
@@ -48,6 +44,42 @@ export const DrawingCanvas = ({
   onTimeUp,
   totalRounds,
 }: DrawingCanvasProps) => {
+  const colors = [
+    "#000000", // Black
+    "#FFFFFF", // White
+    "#EF4444", // Red
+    "#F97316", // Orange
+    "#EAB308", // Yellow
+    "#22C55E", // Green
+    "#3B82F6", // Blue
+    "#8B5CF6", // Purple
+    "#EC4899", // Pink
+    "#78716C", // Brown
+  ];
+
+  const strokeWidths = [
+    { value: 2, label: "Thin" },
+    { value: 6, label: "Medium" },
+    { value: 12, label: "Thick" },
+  ];
+
+  // for setting canvas details
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Set canvas size
+    canvas.width = 600;
+    canvas.height = 400;
+
+    // Fill with white background
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }, []);
+
   return (
     <div className="bg-card border border-border rounded-lg h-full flex flex-col gap-3 p-3">
       {/* Game Header */}

@@ -14,8 +14,7 @@ import { ChatMessage } from "./types";
 interface RoomSettingsProps {
   settings: Room;
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
-  onSettingsChange: (settings: Room) => void;
-  handleCustomWords: (words: string) => void;
+  onSettingsChange: React.Dispatch<React.SetStateAction<Room>>;
   onCreateGame: () => void;
   handleBack: () => void;
   onStartGame: () => void;
@@ -36,12 +35,16 @@ export const RoomSettings = ({
   onCreateGame,
   roomUrl,
   onStartGame,
-  handleCustomWords,
   handleBack,
   setMessages,
 }: RoomSettingsProps) => {
   const updateSetting = <K extends keyof Room>(key: K, value: Room[K]) => {
     onSettingsChange({ ...settings, [key]: value });
+  };
+
+  const handleCustomWords = (words: string) => {
+    const arr = words.split(", ");
+    onSettingsChange((prev) => ({ ...prev, custom_word: arr }));
   };
 
   const [value, setValue] = useState<string>("");
