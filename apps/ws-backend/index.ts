@@ -21,6 +21,8 @@ server.on("connection", (ws: ExtendedWebSocket) => {
   ws.on("message", (data) => {
     const parsedData = JSON.parse(data.toString());
 
+    console.log("received data ", parsedData);
+
     if (parsedData.type === MESSAGE_TYPE.CREATE_ROOM) {
       const {
         players,
@@ -560,9 +562,12 @@ server.on("connection", (ws: ExtendedWebSocket) => {
   });
 
   ws.on("close", () => {
-    round = 0;
-    rightWord = "";
+    // TODO: lets see if this works
+    // round = 0;
+    // rightWord = "";
     if (rooms.length !== 0) {
+      round = 0;
+      rightWord = "";
       // if user left, we will find the room
       const room = rooms.find((rm) => rm.room.id === ws.roomId);
       if (room) {
