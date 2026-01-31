@@ -21,7 +21,7 @@ interface DrawingCanvasProps {
   draw: (e: React.MouseEvent<HTMLCanvasElement>) => void;
   currentRound: number;
   totalRounds: number;
-  drawTime: number;
+  roundEndsAt: number;
   onTimeUp: () => void;
 }
 
@@ -40,7 +40,7 @@ export const DrawingCanvas = ({
   tool,
   totalLength,
   currentRound,
-  drawTime,
+  roundEndsAt,
   onTimeUp,
   totalRounds,
 }: DrawingCanvasProps) => {
@@ -87,7 +87,7 @@ export const DrawingCanvas = ({
         currentRound={currentRound}
         totalRounds={totalRounds}
         totalLength={totalLength}
-        initialTime={drawTime}
+        roundEndsAt={roundEndsAt}
         onTimeUp={onTimeUp}
       />
 

@@ -32,7 +32,15 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         userId,
       } = parsedData.data;
 
+      console.log("room creating data");
+      console.log(parsedData.data);
+
       const roomId = id;
+
+      // why?? because if we are using just a normal setinterval timer then it is based on
+      // the performance of client like number of tabs opened and etc...
+
+      const time_based_draw_time = Date.now() + draw_time * 1000;
 
       ws.roomId = id;
       ws.userId = userId;
@@ -43,6 +51,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
           players,
           rounds,
           draw_time,
+          roundEndsAt: time_based_draw_time,
           language,
           custom_word,
           status,
@@ -399,8 +408,6 @@ server.on("connection", (ws: ExtendedWebSocket) => {
 
       const room = rooms.find((rm) => rm.room.id === roomId);
 
-      console.log("room ", room);
-
       if (!room) {
         ws.send(
           JSON.stringify({
@@ -476,7 +483,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
               type: MESSAGE_TYPE.MESSAGE,
               data: {
                 message: word,
-                from: user.name,
+                from: usr.ws === ws ? "You" : user.name,
               },
             }),
           );
@@ -506,8 +513,8 @@ server.on("connection", (ws: ExtendedWebSocket) => {
             JSON.stringify({
               type: MESSAGE_TYPE.MESSAGE,
               data: {
-                message: `${usr.ws === ws ? "You" : usr.name} guessed the right word`,
-                from: usr.ws === ws ? "You" : usr.name,
+                message: `${usr.ws === ws ? "You" : user.name} guessed the right word`,
+                from: "server",
                 room,
               },
             }),

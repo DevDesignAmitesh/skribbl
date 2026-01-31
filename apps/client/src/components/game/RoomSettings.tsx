@@ -10,6 +10,7 @@ import {
 import { Room } from "@repo/common/common";
 import { useState } from "react";
 import { ChatMessage } from "./types";
+import { random_words } from "@/lib/lib";
 
 interface RoomSettingsProps {
   settings: Room;
@@ -49,24 +50,15 @@ export const RoomSettings = ({
 
   const [value, setValue] = useState<string>("");
 
-  const generateRandomWords = () => {
-    const value = generate();
-
-    setValue(value);
-    handleCustomWords(value);
+  const generate = () => {
+    const randomIndex = Math.floor(Math.random() * random_words.length)!;
+    return random_words[randomIndex];
   };
 
-  const generate = () => {
-    const arr = [
-      "cat, dog, house, car, sun, moon, tree, fish, apple, ball, hat, shoe, book, chair, phone, star, cloud, cake, cup, key",
-      "ninja, pirate, robot, monster, ghost, zombie, dinosaur, unicorn, dragon, alien, superhero, clown, wizard, knight, vampire, witch, troll, fairy, mermaid, cowboy",
-      "airplane, backpack, camera, toothbrush, umbrella, skateboard, lighthouse, volcano, popcorn, snowman, lighthouse, guitar, microphone, suitcase, telescope, ferris wheel",
-      "earthquake, skyscraper, submarine, helicopter, lighthouse, rollercoaster, astronaut, microscope, windmill, waterfall, satellite, compass, hourglass, chandelier",
-      "cat, dog, house, car, sun, ninja, robot, dinosaur, unicorn, dragon, airplane, camera, umbrella, skateboard, popcorn, snowman, astronaut, lighthouse, volcano, waterfall",
-    ];
-
-    const randomIndex = Math.floor(Math.random() * arr.length)!;
-    return arr[randomIndex];
+  const generateRandomWords = () => {
+    const value = generate();
+    setValue(value);
+    handleCustomWords(value);
   };
 
   return (

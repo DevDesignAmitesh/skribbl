@@ -492,7 +492,7 @@ export const Main = () => {
           <DrawingCanvas
             isChooser={isChooser}
             currentRound={room.room?.latest_round!}
-            drawTime={room.room?.draw_time!}
+            roundEndsAt={room.room?.roundEndsAt!}
             onTimeUp={handleStartGame}
             totalRounds={room.room?.rounds!}
             // totalLength={[4, 5]}

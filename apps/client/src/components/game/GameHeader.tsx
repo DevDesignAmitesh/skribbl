@@ -4,7 +4,7 @@ interface GameHeaderProps {
   currentRound: number;
   totalRounds: number;
   totalLength: number[];
-  initialTime: number;
+  roundEndsAt: number;
   onTimeUp?: () => void;
 }
 
@@ -29,33 +29,30 @@ export const GameHeader = ({
   currentRound,
   totalRounds,
   totalLength,
-  initialTime,
+  roundEndsAt,
   onTimeUp,
 }: GameHeaderProps) => {
-  const [timeRemaining, setTimeRemaining] = useState(initialTime);
+  const [timeRemaining, setTimeRemaining] = useState(() =>
+    Math.max(0, Math.ceil((roundEndsAt - Date.now()) / 1000)),
+  );
 
   useEffect(() => {
-    setTimeRemaining(initialTime);
-  }, [initialTime]);
+    const interval = setInterval(() => {
+      const remaining = Math.max(
+        0,
+        Math.ceil((roundEndsAt - Date.now()) / 1000),
+      );
 
-  useEffect(() => {
-    if (timeRemaining <= 0) {
-      onTimeUp?.();
-      return;
-    }
+      setTimeRemaining(remaining);
 
-    const timer = setInterval(() => {
-      setTimeRemaining((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+      if (remaining === 0) {
+        clearInterval(interval);
+        onTimeUp?.();
+      }
+    }, 500); // 500ms = smoother + safer
 
-    return () => clearInterval(timer);
-  }, [timeRemaining, onTimeUp]);
+    return () => clearInterval(interval);
+  }, [roundEndsAt, onTimeUp]);
 
   const isLowTime = timeRemaining <= 10;
 

@@ -23,6 +23,7 @@ export interface Room {
   total_round?: number;
   right_word?: string;
   rounds: number;
+  roundEndsAt?: number;
   status: roomStatus;
   custom_word: string[];
   startedAt?: number;
