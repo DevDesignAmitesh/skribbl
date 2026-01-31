@@ -13,15 +13,10 @@ let rooms: {
   users: User[];
 }[] = [];
 
-let round = 0;
-let rightWord = "";
-
 server.on("connection", (ws: ExtendedWebSocket) => {
   console.log("connected");
   ws.on("message", (data) => {
     const parsedData = JSON.parse(data.toString());
-
-    console.log("received data ", parsedData);
 
     if (parsedData.type === MESSAGE_TYPE.CREATE_ROOM) {
       const {
@@ -51,6 +46,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
           language,
           custom_word,
           status,
+          latest_round: 0,
         },
         users: [
           {
@@ -256,7 +252,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         return;
       }
 
-      if (round === room.users.length * room.room.rounds) {
+      if (room.room.latest_round === room.users.length * room.room.rounds) {
         room.users.forEach((usr) => {
           usr.ws.send(
             JSON.stringify({
@@ -268,17 +264,15 @@ server.on("connection", (ws: ExtendedWebSocket) => {
             }),
           );
         });
-        round = 0;
+        room.room.latest_round = 0;
         room.room.status = "ended";
         return;
       }
 
       room.room.startedAt = Date.now();
       room.room.status = "ongoing";
-      console.log("pre round ", round);
-      round = round + 1;
-      console.log("post round ", round);
-      room.room.latest_round = round;
+      room.room.latest_round =
+        room.room.latest_round && room.room.latest_round + 1;
 
       const randomIndex = Math.floor(Math.random() * room.users.length)!;
       const chooser = room.users[randomIndex]!;
@@ -298,7 +292,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
           type: MESSAGE_TYPE.YOU_ARE_CHOOSER,
           data: {
             room,
-            round,
+            round: room.room.latest_round,
           },
         }),
       );
@@ -309,7 +303,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
             type: MESSAGE_TYPE.SOMEONE_CHOOSING,
             data: {
               room,
-              round,
+              round: room.room.latest_round,
               message: `${chooser.name} is choosing`,
             },
           }),
@@ -365,7 +359,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
 
       const right_word = word.trim();
 
-      rightWord = right_word;
+      room.room.right_word = right_word;
 
       // word = 'taj mahal'
 
@@ -401,6 +395,8 @@ server.on("connection", (ws: ExtendedWebSocket) => {
       const { roomId, userId, word } = parsedData.data;
 
       const room = rooms.find((rm) => rm.room.id === roomId);
+
+      console.log("room ", room);
 
       if (!room) {
         ws.send(
@@ -470,7 +466,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         return;
       }
 
-      if (word !== rightWord) {
+      if (word !== room.room.right_word) {
         room.users.forEach((usr) => {
           usr.ws.send(
             JSON.stringify({
@@ -485,7 +481,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         return;
       }
 
-      if (word === rightWord) {
+      if (word === room.room.right_word) {
         const submitedAt = Date.now();
         const diff = submitedAt - room.room.startedAt!;
 
@@ -498,6 +494,9 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         }
 
         user.status = "idol";
+
+        const filterdUser = room.users.filter((usr) => usr.id !== user.id);
+        room.users = [...filterdUser, user];
 
         room.users.forEach((usr) => {
           usr.ws.send(
@@ -512,10 +511,24 @@ server.on("connection", (ws: ExtendedWebSocket) => {
           );
         });
       }
+
+      // TODO: we will think about this later
+      // if everyone is idol means either every one chooses the word or everyone is new
+      // so we will start a new game here
+      // const isAllIdol = room.users.every((usr) => usr.status === "idol");
+
+      // if (isAllIdol) {
+      //   room.users.forEach((usr) => {
+      //     usr.ws.send(
+      //       JSON.stringify({
+      //         type: MESSAGE_TYPE.ANOTHER_ONE,
+      //       }),
+      //     );
+      //   });
+      // }
     }
 
     if (parsedData.type === MESSAGE_TYPE.DRAWING) {
-      // path?: { x: number; y: number }[];
       const { roomId, userId, payload } = parsedData.data;
 
       const room = rooms.find((rm) => rm.room.id === roomId);
@@ -559,6 +572,48 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         );
       });
     }
+
+    if (parsedData.type === MESSAGE_TYPE.CLEAR_CANVAS) {
+      const { roomId, userId } = parsedData.data;
+
+      const room = rooms.find((rm) => rm.room.id === roomId);
+
+      if (!room) {
+        ws.send(
+          JSON.stringify({
+            type: MESSAGE_TYPE.MESSAGE,
+            data: {
+              from: "server",
+              message: "room not found with the given Id",
+            },
+          }),
+        );
+        return;
+      }
+
+      const user = room.users.find((usr) => usr.id === userId);
+
+      if (!user) {
+        ws.send(
+          JSON.stringify({
+            type: MESSAGE_TYPE.MESSAGE,
+            data: {
+              from: "server",
+              message: "user not found with the given id",
+            },
+          }),
+        );
+        return;
+      }
+
+      room.users.forEach((usr) => {
+        usr.ws.send(
+          JSON.stringify({
+            type: parsedData.type,
+          }),
+        );
+      });
+    }
   });
 
   ws.on("close", () => {
@@ -566,8 +621,6 @@ server.on("connection", (ws: ExtendedWebSocket) => {
     // round = 0;
     // rightWord = "";
     if (rooms.length !== 0) {
-      round = 0;
-      rightWord = "";
       // if user left, we will find the room
       const room = rooms.find((rm) => rm.room.id === ws.roomId);
       if (room) {

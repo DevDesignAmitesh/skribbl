@@ -80,7 +80,7 @@ export const Main = () => {
       JSON.stringify({
         type: MESSAGE_TYPE.GUESS_WORD,
         data: {
-          roomId: roomId ?? roomSettings.id ?? room.room?.id,
+          roomId: room.room?.id,
           word: message,
           userId: player.id,
         },
@@ -143,7 +143,7 @@ export const Main = () => {
       JSON.stringify({
         type: MESSAGE_TYPE.CHOOSEN_WORD,
         data: {
-          roomId: roomId ?? roomSettings.id,
+          roomId: room?.room?.id,
           word,
           userId: player.id,
         },
@@ -199,7 +199,7 @@ export const Main = () => {
         type: MESSAGE_TYPE.DRAWING,
         data: {
           payload,
-          roomId: roomId ?? roomSettings.id ?? room.room?.id,
+          roomId: room.room?.id,
           userId: player.id,
         },
       }),
@@ -217,6 +217,10 @@ export const Main = () => {
     ws.send(
       JSON.stringify({
         type: MESSAGE_TYPE.CLEAR_CANVAS,
+        data: {
+          roomId: room.room?.id,
+          userId: player.id,
+        },
       }),
     );
   };
@@ -244,7 +248,7 @@ export const Main = () => {
     ws.onmessage = (event) => {
       const parsedData = JSON.parse(event.data);
 
-      console.log("receved data", parsedData);
+      console.log("recevied data ", parsedData);
 
       if (parsedData.type === MESSAGE_TYPE.CREATE_ROOM) {
         const { room, roomUrl } = parsedData.data;
@@ -253,7 +257,10 @@ export const Main = () => {
         setRoomUrl(roomUrl);
       }
 
-      if (parsedData.type === MESSAGE_TYPE.JOIN_ROOM) {
+      if (
+        parsedData.type === MESSAGE_TYPE.JOIN_ROOM ||
+        parsedData.type === MESSAGE_TYPE.JOIN_RANDOM
+      ) {
         const { room } = parsedData.data as {
           room: { room: Room; users: User[] };
         };
@@ -281,29 +288,6 @@ export const Main = () => {
         // we have to get the room status
         // if status is creating then wating screen else if shared-room
         // have to update the status locally
-      }
-
-      if (parsedData.type === MESSAGE_TYPE.JOIN_RANDOM) {
-        const { room } = parsedData.data as {
-          room: { room: Room; users: User[] };
-        };
-        setRoom(room);
-        const user = room.users.find((usr: User) => usr.id === player.id);
-        if (!user) return;
-        if (room.room.status === "creating") {
-          handleSetView("waiting");
-        } else if (room.room.status === "ongoing") {
-          handleSetView("share-room");
-        } else if (room.room.status === "ended") {
-          alert("room ended");
-          window.location.reload();
-        }
-
-        setPlayer((prev) => ({
-          ...prev,
-          status: user.status,
-          type: user.type,
-        }));
       }
 
       if (parsedData.type === MESSAGE_TYPE.YOU_ARE_CHOOSER) {
@@ -397,21 +381,17 @@ export const Main = () => {
         ]);
         setRoom(room);
       }
+
+      if (parsedData.type === MESSAGE_TYPE.ANOTHER_ONE) {
+        handleStartGame();
+      }
     };
   }, [ws]);
 
   // TODO: lets see if we need it or not...
-  // useEffect(() => {
-  //   console.log("room", room);
-  //   const user = room.users.find((usr) => usr.id === player.id);
-  //   if (!user) return;
-
-  //   setPlayer((prev) => ({
-  //     ...prev,
-  //     type: user.type,
-  //     status: user.status,
-  //   }));
-  // }, [room]);
+  useEffect(() => {
+    console.log("room ", room);
+  }, [room]);
 
   const isAdmin = player?.type === "admin";
   const isMember = player?.type === "member";
@@ -426,7 +406,6 @@ export const Main = () => {
   }
 
   if (chooseType === "chooser") {
-    console.log("chooser screen is running");
     return (
       <WordSelection
         words={room?.room?.custom_word ?? []}
@@ -436,7 +415,6 @@ export const Main = () => {
   }
 
   if (chooseType === "choosing") {
-    console.log("choosing screen is running");
     return (
       <div className="z-100 inset-0 bg-card border border-border text-foreground rounded-lg h-screen flex justify-center items-center">
         {chooseMessage}
@@ -446,7 +424,6 @@ export const Main = () => {
 
   // Landing page
   if (view === "landing") {
-    console.log("landing screen is running");
     return (
       <LandingPage
         player={player}
@@ -462,7 +439,6 @@ export const Main = () => {
     // TODO: we can show the preview of room setting instead of this blank screen
     // it is easy to add just pass this condition => currentPlayer && currentPlayer.type === "admin"
     // and render the inputs disability accordingly ( you know this.... )
-    console.log("waiting screen is running");
     return (
       <RoomLayout
         players={room.users}
@@ -477,7 +453,6 @@ export const Main = () => {
       />
     );
   } else if (view === "create-room" && !isMember) {
-    console.log("create room screen is running");
     return (
       <RoomLayout
         players={room.users}
@@ -498,7 +473,6 @@ export const Main = () => {
       />
     );
   } else if (view === "share-room" && player) {
-    console.log("share room screen is running");
     return (
       <RoomLayout
         players={room.users}

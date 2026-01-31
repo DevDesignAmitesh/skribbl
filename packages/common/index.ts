@@ -20,6 +20,7 @@ export interface Room {
   language: string;
   draw_time: number;
   latest_round?: number;
+  right_word?: string;
   rounds: number;
   status: roomStatus;
   custom_word: string[];
@@ -40,12 +41,14 @@ export type MESSAGE_TYPE =
   | "YOU_ARE_CHOOSER"
   | "SOMEONE_CHOOSING"
   | "CLEAR_CANVAS"
+  | "ANOTHER_ONE"
   | "MESSAGE";
 
 export const MESSAGE_TYPE: Record<MESSAGE_TYPE, MESSAGE_TYPE> = {
   CREATE_ROOM: "CREATE_ROOM",
   LEFT: "LEFT",
   JOIN_ROOM: "JOIN_ROOM",
+  ANOTHER_ONE: "ANOTHER_ONE",
   JOIN_RANDOM: "JOIN_RANDOM",
   MESSAGE: "MESSAGE",
   GAME_END: "GAME_END",

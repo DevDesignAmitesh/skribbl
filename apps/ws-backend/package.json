@@ -2,6 +2,9 @@
   "name": "ws-backend",
   "module": "index.ts",
   "type": "module",
+  "scripts": {
+    "dev": "bun run index.ts"
+  },
   "private": true,
   "devDependencies": {
     "@types/bun": "latest",
