@@ -517,7 +517,7 @@ export const Main = () => {
       <GameSummary
         players={room.users}
         redirectTime={10}
-        onRestart={() => window.location.reload()}
+        onRestart={() => window.location.replace(process.env.FRONTEND_URL!)}
       />
     );
   }

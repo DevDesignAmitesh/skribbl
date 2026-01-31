@@ -32,9 +32,6 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         userId,
       } = parsedData.data;
 
-      console.log("room creating data");
-      console.log(parsedData.data);
-
       const roomId = id;
 
       // why?? because if we are using just a normal setinterval timer then it is based on
@@ -279,6 +276,8 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         return;
       }
 
+      const time_based_draw_time = Date.now() + room.room.draw_time * 1000;
+      room.room.roundEndsAt = time_based_draw_time;
       room.room.startedAt = Date.now();
       room.room.status = "ongoing";
       room.room.total_round! += 1;
