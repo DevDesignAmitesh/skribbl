@@ -47,6 +47,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
           custom_word,
           status,
           latest_round: 0,
+          total_round: 0,
         },
         users: [
           {
@@ -252,7 +253,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         return;
       }
 
-      if (room.room.latest_round === room.users.length * room.room.rounds) {
+      if (room.room.total_round === room.users.length * room.room.rounds) {
         room.users.forEach((usr) => {
           usr.ws.send(
             JSON.stringify({
@@ -264,15 +265,17 @@ server.on("connection", (ws: ExtendedWebSocket) => {
             }),
           );
         });
-        room.room.latest_round = 0;
-        room.room.status = "ended";
+        const filterdRooms = rooms.filter((rm) => rm.room.id !== room.room.id);
+        rooms = filterdRooms;
         return;
       }
 
       room.room.startedAt = Date.now();
       room.room.status = "ongoing";
-      room.room.latest_round =
-        room.room.latest_round && room.room.latest_round + 1;
+      room.room.total_round! += 1;
+      room.room.latest_round! = Math.floor(
+        room.room.total_round! / room.users.length,
+      );
 
       const randomIndex = Math.floor(Math.random() * room.users.length)!;
       const chooser = room.users[randomIndex]!;
@@ -466,7 +469,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         return;
       }
 
-      if (word !== room.room.right_word) {
+      if (word.trim() !== room.room.right_word) {
         room.users.forEach((usr) => {
           usr.ws.send(
             JSON.stringify({
@@ -481,7 +484,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         return;
       }
 
-      if (word === room.room.right_word) {
+      if (word.trim() === room.room.right_word) {
         const submitedAt = Date.now();
         const diff = submitedAt - room.room.startedAt!;
 

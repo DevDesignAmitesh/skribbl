@@ -17,6 +17,7 @@ import { WS_URL } from "@/lib/lib";
 import { useSearchParams } from "next/navigation";
 import { WordSelection } from "@/components/game/WordSelection";
 import { toast } from "sonner";
+import { GameSummary } from "@/components/game/GameSummary";
 
 export const Main = () => {
   const params = useSearchParams();
@@ -292,6 +293,7 @@ export const Main = () => {
 
       if (parsedData.type === MESSAGE_TYPE.YOU_ARE_CHOOSER) {
         const { room } = parsedData.data;
+        setRoom(room);
         const user = room.users.find((usr: User) => usr.id === player.id);
         if (!user) return;
         setChooseType("chooser");
@@ -303,6 +305,7 @@ export const Main = () => {
 
       if (parsedData.type === MESSAGE_TYPE.SOMEONE_CHOOSING) {
         const { room, message } = parsedData.data;
+        setRoom(room);
         const user = room.users.find((usr: User) => usr.id === player.id);
         if (!user) return;
         setChooseType("choosing");
@@ -380,6 +383,12 @@ export const Main = () => {
           },
         ]);
         setRoom(room);
+      }
+
+      if (parsedData.type === MESSAGE_TYPE.GAME_END) {
+        const { room } = parsedData.data;
+        setRoom(room);
+        setView("summary");
       }
 
       if (parsedData.type === MESSAGE_TYPE.ANOTHER_ONE) {
@@ -482,10 +491,10 @@ export const Main = () => {
         centerContent={
           <DrawingCanvas
             isChooser={isChooser}
-            currentRound={room.room?.latest_round ?? 0}
-            drawTime={room.room?.draw_time ?? 0}
+            currentRound={room.room?.latest_round!}
+            drawTime={room.room?.draw_time!}
             onTimeUp={handleStartGame}
-            totalRounds={room.room?.rounds ?? 0}
+            totalRounds={room.room?.rounds!}
             // totalLength={[4, 5]}
             totalLength={totalLength}
             canvasRef={canvasRef}
@@ -501,6 +510,14 @@ export const Main = () => {
             tool={tool}
           />
         }
+      />
+    );
+  } else if (view === "summary") {
+    return (
+      <GameSummary
+        players={room.users}
+        redirectTime={10}
+        onRestart={() => window.location.reload()}
       />
     );
   }

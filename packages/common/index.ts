@@ -20,6 +20,7 @@ export interface Room {
   language: string;
   draw_time: number;
   latest_round?: number;
+  total_round?: number;
   right_word?: string;
   rounds: number;
   status: roomStatus;

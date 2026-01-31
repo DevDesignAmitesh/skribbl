@@ -1,6 +1,11 @@
 import { userStatus, userType } from "@repo/common/common";
 
-export type ViewState = "landing" | "create-room" | "waiting" | "share-room";
+export type ViewState =
+  | "landing"
+  | "create-room"
+  | "waiting"
+  | "share-room"
+  | "summary";
 
 export type chooseState = "chooser" | "choosing" | "guessed";
 
