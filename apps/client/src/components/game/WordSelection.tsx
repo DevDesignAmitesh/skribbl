@@ -1,6 +1,7 @@
 // TODO: make sure that random words are not repeating itself...
 
 import { cn } from "@/lib/utils";
+import { useEffect, useRef, useState } from "react";
 
 interface WordSelectionProps {
   words: string[];
@@ -8,7 +9,46 @@ interface WordSelectionProps {
 }
 
 export const WordSelection = ({ words, onSelectWord }: WordSelectionProps) => {
-  const randomWords = getRandomWords(words);
+  const [randomWords, setRandomWords] = useState<string[]>([]);
+
+  const hasSelectedRef = useRef<boolean>(false);
+  const [timeleft, setTimeleft] = useState(10);
+
+  useEffect(() => {
+    if (hasSelectedRef.current) return;
+
+    const interval = setInterval(() => {
+      if (timeleft <= 0) return;
+      setTimeleft((prev) => {
+        if (prev <= 1) {
+          if (!hasSelectedRef.current && randomWords[1]) {
+            hasSelectedRef.current = true;
+            onSelectWord(randomWords[1]);
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [randomWords, onSelectWord]);
+
+  // generate words ONCE
+  useEffect(() => {
+    setRandomWords(getRandomWords(words));
+  }, [words]);
+
+  useEffect(() => {
+    console.log(timeleft);
+    console.log(randomWords);
+  }, [timeleft]);
+
+  const handleSelectWord = (word: string) => {
+    if (hasSelectedRef.current) return;
+    hasSelectedRef.current = true;
+    onSelectWord(word);
+  };
 
   return (
     <div className="bg-card border border-border rounded-lg h-screen flex flex-col items-center justify-center p-8">
@@ -19,13 +59,13 @@ export const WordSelection = ({ words, onSelectWord }: WordSelectionProps) => {
         {randomWords.map((word, index) => (
           <button
             key={index}
-            onClick={() => onSelectWord(word)}
+            onClick={() => handleSelectWord(word)}
             className={cn(
               "w-48 h-32 rounded-lg border-2 flex items-center justify-center",
               "text-xl font-semibold transition-all duration-200",
               "bg-background hover:bg-accent",
               "hover:border-primary hover:scale-105 hover:shadow-lg",
-              "hover:border-border"
+              "hover:border-border",
             )}
           >
             {word}
@@ -34,7 +74,8 @@ export const WordSelection = ({ words, onSelectWord }: WordSelectionProps) => {
       </div>
 
       <p className="text-sm text-muted-foreground mt-8">
-        Click on a word to start drawing
+        Auto-selects in <span className="text-foreground font-semibold">{timeleft}s</span> if
+        no choice is made
       </p>
     </div>
   );
