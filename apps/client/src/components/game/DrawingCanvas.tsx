@@ -4,13 +4,17 @@ import { Pencil, Eraser, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tool } from "./types";
 import { GameHeader } from "./GameHeader";
+import { HalfWord } from "@repo/common/common";
 
 interface DrawingCanvasProps {
   tool: tool;
+  drawtime: number;
+  onHalfTime?: () => void;
   setTool: React.Dispatch<React.SetStateAction<tool>>;
   clearCanvas: () => void;
   setCurrentColor: React.Dispatch<React.SetStateAction<string>>;
   currentColor: string;
+  rightWord: string | null;
   isChooser: boolean;
   strokeWidth: number;
   totalLength: number[];
@@ -22,6 +26,7 @@ interface DrawingCanvasProps {
   currentRound: number;
   totalRounds: number;
   roundEndsAt: number;
+  halfWord: HalfWord[];
   onTimeUp: () => void;
 }
 
@@ -43,6 +48,10 @@ export const DrawingCanvas = ({
   roundEndsAt,
   onTimeUp,
   totalRounds,
+  rightWord,
+  drawtime,
+  onHalfTime,
+  halfWord
 }: DrawingCanvasProps) => {
   const colors = [
     "#000000", // Black
@@ -84,9 +93,13 @@ export const DrawingCanvas = ({
     <div className="bg-card border border-border rounded-lg h-full flex flex-col gap-3 p-3">
       {/* Game Header */}
       <GameHeader
+        halfWord={halfWord}
+        drawtime={drawtime}
+        onHalfTime={onHalfTime}
         currentRound={currentRound}
         totalRounds={totalRounds}
         totalLength={totalLength}
+        rightWord={rightWord}
         roundEndsAt={roundEndsAt}
         onTimeUp={onTimeUp}
       />

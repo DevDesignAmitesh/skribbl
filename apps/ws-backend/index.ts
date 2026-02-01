@@ -1,4 +1,9 @@
-import { type Room, type User, MESSAGE_TYPE } from "@repo/common/common";
+import {
+  type HalfWord,
+  type Room,
+  type User,
+  MESSAGE_TYPE,
+} from "@repo/common/common";
 import WebSocket, { WebSocketServer } from "ws";
 
 interface ExtendedWebSocket extends WebSocket {
@@ -17,6 +22,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
   console.log("connected");
   ws.on("message", (data) => {
     const parsedData = JSON.parse(data.toString());
+    console.log("received data ", parsedData);
 
     if (parsedData.type === MESSAGE_TYPE.CREATE_ROOM) {
       const {
@@ -290,7 +296,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
 
       chooser.status = "chooser";
 
-      const newUsers = room.users.filter((usr) => usr.name !== chooser.name);
+      const newUsers = room.users.filter((usr) => usr.id !== chooser.id);
 
       newUsers.forEach((usr) => {
         usr.status = "guesser";
@@ -494,9 +500,9 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         const submitedAt = Date.now();
         const diff = submitedAt - room.room.startedAt!;
 
-        if (diff <= 3000) {
+        if (diff <= 30000) {
           user.points += 200;
-        } else if (diff <= 1000) {
+        } else if (diff <= 10000) {
           user.points += 150;
         } else {
           user.points += 50;
@@ -519,22 +525,98 @@ server.on("connection", (ws: ExtendedWebSocket) => {
             }),
           );
         });
+
+        user.ws.send(
+          JSON.stringify({
+            type: MESSAGE_TYPE.RIGHT_WORD,
+            data: {
+              word: room.room.right_word,
+            },
+          }),
+        );
       }
 
-      // TODO: we will think about this later
-      // if everyone is idol means either every one chooses the word or everyone is new
-      // so we will start a new game here
-      // const isAllIdol = room.users.every((usr) => usr.status === "idol");
+      // here we are checking if everyuser is idol except the chooser then
+      // starting the next round
+      let idolUser: number = 0;
 
-      // if (isAllIdol) {
-      //   room.users.forEach((usr) => {
-      //     usr.ws.send(
-      //       JSON.stringify({
-      //         type: MESSAGE_TYPE.ANOTHER_ONE,
-      //       }),
-      //     );
-      //   });
-      // }
+      room.users.forEach((usr) => {
+        if (usr.status === "idol") idolUser += 1;
+      });
+
+      console.log("idolUser ", idolUser);
+
+      if (idolUser === room.users.length - 1) {
+        const randomIndex = Math.floor(Math.random() * room.users.length)!;
+        const chooser = room.users[randomIndex]!;
+        chooser.ws.send(
+          JSON.stringify({
+            type: MESSAGE_TYPE.ANOTHER_ONE,
+          }),
+        );
+      }
+    }
+
+    if (parsedData.type === MESSAGE_TYPE.HALF_TIME) {
+      const { roomId, userId } = parsedData.data;
+
+      const room = rooms.find((rm) => rm.room.id === roomId);
+
+      if (!room) {
+        ws.send(
+          JSON.stringify({
+            type: MESSAGE_TYPE.MESSAGE,
+            data: {
+              message: "Room not found with the given Id",
+              from: "server",
+            },
+          }),
+        );
+        return;
+      }
+
+      const user = room.users.find((usr) => usr.id === userId);
+
+      if (!user) {
+        ws.send(
+          JSON.stringify({
+            type: MESSAGE_TYPE.MESSAGE,
+            data: {
+              message: "User not found with the given Id",
+              from: "server",
+            },
+          }),
+        );
+        return;
+      }
+
+      if (user.status !== "guesser") {
+        return;
+      }
+
+      const wordLength = room.room.right_word!.length;
+      const wordsToSend = Math.floor(wordLength / 2);
+      let halfWord: HalfWord[] = [];
+
+      for (let i = 1; i <= wordsToSend; i++) {
+        console.log("loop is running");
+        const elm = room.room.right_word![i]!;
+        halfWord.push({
+          elm,
+          idx: i,
+        });
+      }
+
+      console.log("halfWord ", halfWord);
+
+      user.ws.send(
+        JSON.stringify({
+          type: MESSAGE_TYPE.HALF_WORD,
+          data: {
+            halfWord,
+          },
+        }),
+      );
     }
 
     if (parsedData.type === MESSAGE_TYPE.DRAWING) {
@@ -642,8 +724,15 @@ server.on("connection", (ws: ExtendedWebSocket) => {
           // if the user found, will delete that user out
           const filterdUsers = room.users.filter((usr) => usr.id !== ws.userId);
 
-          // if users left 0 then delete the room too
-          if (filterdUsers.length === 0) {
+          if (filterdUsers.length <= 1) {
+            filterdUsers.forEach((usr) => {
+              usr.ws.send(
+                JSON.stringify({
+                  type: MESSAGE_TYPE.ROOM_DELETED,
+                }),
+              );
+            });
+            // if users left 0 then delete the room too
             const filteredRooms = rooms.filter(
               (rm) => rm.room.id !== room.room.id,
             );

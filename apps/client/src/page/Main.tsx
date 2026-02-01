@@ -12,7 +12,7 @@ import {
   tool,
   chooseState,
 } from "@/components/game/types";
-import { MESSAGE_TYPE, Room, type User } from "@repo/common/common";
+import { HalfWord, MESSAGE_TYPE, Room, type User } from "@repo/common/common";
 import { WS_URL } from "@/lib/lib";
 import { useSearchParams } from "next/navigation";
 import { WordSelection } from "@/components/game/WordSelection";
@@ -35,6 +35,8 @@ export const Main = () => {
   const viewRef = useRef<ViewState>("landing");
   const [chooseType, setChooseType] = useState<chooseState | null>(null);
   const [chooseMessage, setChooseMessage] = useState<string>("");
+  const [rightWord, setRightWord] = useState<string | null>(null);
+  const [halfWord, setHalfWord] = useState<HalfWord[]>([]);
   const [totalLength, setTotalLength] = useState<number[]>([]);
   const [room, setRoom] = useState<{ room: Room | null; users: User[] }>({
     room: null,
@@ -232,6 +234,20 @@ export const Main = () => {
     // when the room will be deleting, the users will be also get notified and we can handleSetView("landing")
   };
 
+  const handleHalfTime = () => {
+    if (!ws) return;
+
+    ws.send(
+      JSON.stringify({
+        type: MESSAGE_TYPE.HALF_TIME,
+        data: {
+          roomId: room.room?.id,
+          userId: player.id,
+        },
+      }),
+    );
+  };
+
   // handle websocket connection
   useEffect(() => {
     const ws = new WebSocket(WS_URL);
@@ -294,6 +310,8 @@ export const Main = () => {
       if (parsedData.type === MESSAGE_TYPE.YOU_ARE_CHOOSER) {
         const { room } = parsedData.data;
         setRoom(room);
+        setHalfWord([]);
+        setRightWord(null);
         const user = room.users.find((usr: User) => usr.id === player.id);
         if (!user) return;
         setChooseType("chooser");
@@ -306,6 +324,8 @@ export const Main = () => {
       if (parsedData.type === MESSAGE_TYPE.SOMEONE_CHOOSING) {
         const { room, message } = parsedData.data;
         setRoom(room);
+        setHalfWord([]);
+        setRightWord(null);
         const user = room.users.find((usr: User) => usr.id === player.id);
         if (!user) return;
         setChooseType("choosing");
@@ -320,12 +340,17 @@ export const Main = () => {
         // totalLength: number[]
         const { totalLength } = parsedData.data;
         setChooseType(null);
+        setHalfWord([]);
+        setRightWord(null);
         setTotalLength(totalLength);
         handleSetView("share-room");
       }
 
       if (parsedData.type === MESSAGE_TYPE.MESSAGE) {
-        const { message, from, room } = parsedData.data;
+        const { message, from, room, word } = parsedData.data;
+        if (word) {
+          setRightWord(word);
+        }
         if (room) {
           setRoom(room);
         }
@@ -343,6 +368,11 @@ export const Main = () => {
             },
           ]);
         }
+      }
+
+      if (parsedData.type === MESSAGE_TYPE.RIGHT_WORD) {
+        const { word } = parsedData.data;
+        setRightWord(word);
       }
 
       if (parsedData.type === MESSAGE_TYPE.DRAWING) {
@@ -392,7 +422,18 @@ export const Main = () => {
       }
 
       if (parsedData.type === MESSAGE_TYPE.ANOTHER_ONE) {
+        toast.info("Everyone guessed the right word, starting next round");
         handleStartGame();
+      }
+
+      if (parsedData.type === MESSAGE_TYPE.HALF_WORD) {
+        const { halfWord } = parsedData.data;
+        setHalfWord(halfWord);
+      }
+
+      if (parsedData.type === MESSAGE_TYPE.ROOM_DELETED) {
+        toast.info("Everybody left the room, deleting the room");
+        window.location.replace(process.env.NEXT_PUBLIC_FRONTEND_URL!);
       }
     };
   }, [ws]);
@@ -495,6 +536,10 @@ export const Main = () => {
             roundEndsAt={room.room?.roundEndsAt!}
             onTimeUp={handleStartGame}
             totalRounds={room.room?.rounds!}
+            rightWord={rightWord}
+            drawtime={room.room?.draw_time!}
+            onHalfTime={handleHalfTime}
+            halfWord={halfWord}
             // totalLength={[4, 5]}
             totalLength={totalLength}
             canvasRef={canvasRef}
@@ -517,7 +562,9 @@ export const Main = () => {
       <GameSummary
         players={room.users}
         redirectTime={10}
-        onRestart={() => window.location.replace(process.env.FRONTEND_URL!)}
+        onRestart={() =>
+          window.location.replace(process.env.NEXT_PUBLIC_FRONTEND_URL!)
+        }
       />
     );
   }
