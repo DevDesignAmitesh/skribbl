@@ -295,20 +295,36 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         room.room.total_round! / room.users.length,
       );
 
-      const randomIndex = Math.floor(Math.random() * room.users.length)!;
-      const chooser = room.users[randomIndex]!;
+      const isAllUserDone = room.users.every((usr) => usr.turn === true);
 
-      chooser.status = "chooser";
+      if (isAllUserDone) {
+        room.users.forEach((usr) => {
+          usr.turn = false;
+        });
+      }
 
-      const newUsers = room.users.filter((usr) => usr.id !== chooser.id);
+      // const randomIndex = Math.floor(Math.random() * room.users.length)!;
+      // const chooser = room.users[randomIndex]!;
+
+      let chooser: User;
+
+      room.users.forEach((usr) => {
+        if (usr.turn === true) return;
+        chooser = usr;
+      });
+
+      chooser!.status = "chooser";
+      chooser!.turn = true;
+
+      const newUsers = room.users.filter((usr) => usr.id !== chooser!.id);
 
       newUsers.forEach((usr) => {
         usr.status = "guesser";
       });
 
-      room.users = [...newUsers, chooser];
+      room.users = [...newUsers, chooser!];
 
-      chooser.ws.send(
+      chooser!.ws.send(
         JSON.stringify({
           type: MESSAGE_TYPE.YOU_ARE_CHOOSER,
           data: {

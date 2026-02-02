@@ -12,6 +12,7 @@ export interface User {
   status: userStatus;
   ws: WebSocket;
   points: number;
+  turn?: boolean
 }
 
 export interface Room {

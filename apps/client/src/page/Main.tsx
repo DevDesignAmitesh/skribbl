@@ -422,7 +422,6 @@ export const Main = () => {
       }
 
       if (parsedData.type === MESSAGE_TYPE.ANOTHER_ONE) {
-        toast.info("Everyone guessed the right word, starting next round");
         handleStartGame();
       }
 
@@ -432,7 +431,6 @@ export const Main = () => {
       }
 
       if (parsedData.type === MESSAGE_TYPE.ROOM_DELETED) {
-        toast.info("Everybody left the room, deleting the room");
         window.location.replace(process.env.NEXT_PUBLIC_FRONTEND_URL!);
       }
     };
