@@ -18,6 +18,9 @@ let rooms: {
   users: User[];
 }[] = [];
 
+// roomId and right_word
+let rightWords: Map<string, string> = new Map();
+
 server.on("connection", (ws: ExtendedWebSocket) => {
   console.log("connected");
   ws.on("message", (data) => {
@@ -277,6 +280,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
             }),
           );
         });
+        rightWords.delete(room.room.id);
         const filterdRooms = rooms.filter((rm) => rm.room.id !== room.room.id);
         rooms = filterdRooms;
         return;
@@ -376,7 +380,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
 
       const right_word = word.trim();
 
-      room.room.right_word = right_word;
+      rightWords.set(room.room.id, right_word);
 
       // word = 'taj mahal'
 
@@ -481,7 +485,9 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         return;
       }
 
-      if (word.trim() !== room.room.right_word) {
+      const right_word = rightWords.get(room.room.id);
+
+      if (word.trim() !== right_word) {
         room.users.forEach((usr) => {
           usr.ws.send(
             JSON.stringify({
@@ -496,7 +502,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         return;
       }
 
-      if (word.trim() === room.room.right_word) {
+      if (word.trim() === right_word) {
         const submitedAt = Date.now();
         const diff = submitedAt - room.room.startedAt!;
 
@@ -530,7 +536,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
           JSON.stringify({
             type: MESSAGE_TYPE.RIGHT_WORD,
             data: {
-              word: room.room.right_word,
+              word: right_word,
             },
           }),
         );
@@ -594,13 +600,15 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         return;
       }
 
-      const wordLength = room.room.right_word!.length;
+      const right_word = rightWords.get(room.room.id);
+
+      const wordLength = right_word!.length;
       const wordsToSend = Math.floor(wordLength / 2);
       let halfWord: HalfWord[] = [];
 
       for (let i = 1; i <= wordsToSend; i++) {
         console.log("loop is running");
-        const elm = room.room.right_word![i]!;
+        const elm = right_word![i]!;
         halfWord.push({
           elm,
           idx: i,
@@ -709,8 +717,6 @@ server.on("connection", (ws: ExtendedWebSocket) => {
 
   ws.on("close", () => {
     // TODO: lets see if this works
-    // round = 0;
-    // rightWord = "";
     if (rooms.length !== 0) {
       // if user left, we will find the room
       const room = rooms.find((rm) => rm.room.id === ws.roomId);
@@ -732,6 +738,8 @@ server.on("connection", (ws: ExtendedWebSocket) => {
                 }),
               );
             });
+
+            rightWords.delete(room.room.id);
             // if users left 0 then delete the room too
             const filteredRooms = rooms.filter(
               (rm) => rm.room.id !== room.room.id,

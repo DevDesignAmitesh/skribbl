@@ -21,7 +21,6 @@ export interface Room {
   draw_time: number;
   latest_round?: number;
   total_round?: number;
-  right_word?: string;
   rounds: number;
   roundEndsAt?: number;
   status: roomStatus;
