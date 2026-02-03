@@ -717,7 +717,9 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         return;
       }
 
-      room.users.forEach((usr) => {
+      const filterdUsers = room.users.filter((usr) => usr.id !== user.id);
+
+      filterdUsers.forEach((usr) => {
         usr.ws.send(
           JSON.stringify({
             type: parsedData.type,

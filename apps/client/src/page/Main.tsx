@@ -57,6 +57,7 @@ export const Main = () => {
   });
 
   const [exposedPlayed, isExposedPlayed] = useState<boolean>(false);
+  const lastSentRef = useRef<number>(0);
 
   // getting used in the drawing canvas comp
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -187,16 +188,47 @@ export const Main = () => {
     if (!isDrawing || !lastPosRef.current) return;
     if (!ws) return;
 
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = getContext();
+    if (!ctx) return;
+
+    // 1️⃣ Get pixel coordinates (for drawing)
     const pos = getCanvasCoordinates(e);
+    const from = lastPosRef.current;
+
+    // 2️⃣ Draw LOCALLY using PIXELS
+    ctx.beginPath();
+    ctx.moveTo(from.x, from.y);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.strokeStyle = tool === "eraser" ? "#FFFFFF" : currentColor;
+    ctx.lineWidth = strokeWidth;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.stroke();
+
+    // 3️⃣ Update last position in PIXELS
+    lastPosRef.current = pos;
+
+    // 4️⃣ Throttle WS
+    const now = Date.now();
+    if (now - lastSentRef.current < 16) return;
+    lastSentRef.current = now;
+
+    // 5️⃣ Normalize ONLY for network
+    const normalize = (p: { x: number; y: number }) => ({
+      x: p.x / canvas.width,
+      y: p.y / canvas.height,
+    });
 
     const payload = {
       type: "stroke",
-      from: lastPosRef.current,
-      to: pos,
+      from: normalize(from),
+      to: normalize(pos),
       color: tool === "eraser" ? "#FFFFFF" : currentColor,
-      width: strokeWidth,
+      width: strokeWidth / canvas.width,
       tool,
-      name: player.name,
       roomId,
     };
 
@@ -381,19 +413,31 @@ export const Main = () => {
       if (parsedData.type === MESSAGE_TYPE.DRAWING) {
         const ctx = getContext();
         if (!ctx) return;
+
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
         const { payload } = parsedData.data;
-        const { type, from, to, color, width, tool } = payload;
+        const { from, to, color, width, tool } = payload;
+
+        // Denormalize coordinates
+        const fromX = from.x * canvas.width;
+        const fromY = from.y * canvas.height;
+        const toX = to.x * canvas.width;
+        const toY = to.y * canvas.height;
+
+        ctx.save();
 
         ctx.beginPath();
-        ctx.moveTo(from.x, from.y);
-        ctx.lineTo(to.x, to.y);
+        ctx.moveTo(fromX, fromY);
+        ctx.lineTo(toX, toY);
         ctx.strokeStyle = color;
-        ctx.lineWidth = width;
+        ctx.lineWidth = width * canvas.width;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
         ctx.stroke();
 
-        lastPosRef.current = to;
+        ctx.restore();
       }
 
       if (parsedData.type === MESSAGE_TYPE.CLEAR_CANVAS) {
