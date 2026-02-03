@@ -18,6 +18,7 @@ import { useSearchParams } from "next/navigation";
 import { WordSelection } from "@/components/game/WordSelection";
 import { toast } from "sonner";
 import { GameSummary } from "@/components/game/GameSummary";
+import Sound from "react-sound";
 
 export const Main = () => {
   const params = useSearchParams();
@@ -54,6 +55,8 @@ export const Main = () => {
     custom_word: [],
     status: "creating",
   });
+
+  const [exposedPlayed, isExposedPlayed] = useState<boolean>(false);
 
   // getting used in the drawing canvas comp
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -422,7 +425,9 @@ export const Main = () => {
       }
 
       if (parsedData.type === MESSAGE_TYPE.ANOTHER_ONE) {
-        handleStartGame();
+        setTimeout(() => {
+          handleStartGame();
+        }, 2000);
       }
 
       if (parsedData.type === MESSAGE_TYPE.HALF_WORD) {
@@ -522,48 +527,64 @@ export const Main = () => {
     );
   } else if (view === "share-room" && player) {
     return (
-      <RoomLayout
-        players={room.users}
-        messages={messages}
-        onSendMessage={handleSendMessage}
-        currentPlayerId={player.id}
-        centerContent={
-          <DrawingCanvas
-            isChooser={isChooser}
-            currentRound={room.room?.latest_round!}
-            roundEndsAt={room.room?.roundEndsAt!}
-            onTimeUp={handleStartGame}
-            totalRounds={room.room?.rounds!}
-            rightWord={rightWord}
-            drawtime={room.room?.draw_time!}
-            onHalfTime={handleHalfTime}
-            halfWord={halfWord}
-            // totalLength={[4, 5]}
-            totalLength={totalLength}
-            canvasRef={canvasRef}
-            clearCanvas={clearCanvas}
-            currentColor={currentColor}
-            draw={draw}
-            setCurrentColor={setCurrentColor}
-            setStrokeWidth={setStrokeWidth}
-            setTool={setTool}
-            startDrawing={startDrawing}
-            stopDrawing={stopDrawing}
-            strokeWidth={strokeWidth}
-            tool={tool}
-          />
-        }
-      />
+      <>
+        <RoomLayout
+          players={room.users}
+          messages={messages}
+          onSendMessage={handleSendMessage}
+          currentPlayerId={player.id}
+          centerContent={
+            <DrawingCanvas
+              isChooser={isChooser}
+              currentRound={room.room?.latest_round!}
+              roundEndsAt={room.room?.roundEndsAt!}
+              onTimeUp={handleStartGame}
+              totalRounds={room.room?.rounds!}
+              rightWord={rightWord}
+              drawtime={room.room?.draw_time!}
+              onHalfTime={handleHalfTime}
+              halfWord={halfWord}
+              // totalLength={[4, 5]}
+              totalLength={totalLength}
+              canvasRef={canvasRef}
+              clearCanvas={clearCanvas}
+              currentColor={currentColor}
+              draw={draw}
+              setCurrentColor={setCurrentColor}
+              setStrokeWidth={setStrokeWidth}
+              setTool={setTool}
+              startDrawing={startDrawing}
+              stopDrawing={stopDrawing}
+              strokeWidth={strokeWidth}
+              tool={tool}
+            />
+          }
+        />
+        <Sound
+          url="/guessed.mp3"
+          playStatus={rightWord ? "PLAYING" : "PAUSED"}
+        />
+        <Sound
+          url="/exposed.mp3"
+          playStatus={
+            !exposedPlayed && halfWord.length > 0 ? "PLAYING" : "PAUSED"
+          }
+          onPlaying={() => isExposedPlayed(true)}
+        />
+      </>
     );
   } else if (view === "summary") {
     return (
-      <GameSummary
-        players={room.users}
-        redirectTime={10}
-        onRestart={() =>
-          window.location.replace(process.env.NEXT_PUBLIC_FRONTEND_URL!)
-        }
-      />
+      <>
+        <GameSummary
+          players={room.users}
+          redirectTime={10}
+          onRestart={() =>
+            window.location.replace(process.env.NEXT_PUBLIC_FRONTEND_URL!)
+          }
+        />
+        <Sound url="/gameover.mp3" playStatus="PLAYING" />
+      </>
     );
   }
 };
