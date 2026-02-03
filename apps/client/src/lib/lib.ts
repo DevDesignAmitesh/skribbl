@@ -1,5 +1,11 @@
-export const WS_URL = "ws://localhost:8080";
-// export const WS_URL = "https://xfhpm9tf-8080.inc1.devtunnels.ms/";
+// for deployed one
+export const WS_URL = "ws://skribbl-be.baap.one";
+
+// for localhost
+// export const WS_URL = "ws://localhost:8080";
+
+// for intra-net
+// export const WS_URL = "https://xfhpm9tf-8080.inc1.devtunnels.ms";
 
 export const random_words = [
   "cat, dog, house, car, sun, ninja, robot, dragon, airplane, skateboard, volcano",
