@@ -504,17 +504,59 @@ server.on("connection", (ws: ExtendedWebSocket) => {
       const right_word = rightWords.get(room.room.id);
 
       if (word.trim() !== right_word) {
-        room.users.forEach((usr) => {
-          usr.ws.send(
+        const splitedRightWord = right_word?.trim().split("") as string[];
+        const splitedGuessedWord = word?.trim().split("") as string[];
+        let matches = 0;
+
+        splitedGuessedWord.forEach((chr: string, idx: number) => {
+          const rightChr = splitedRightWord[idx];
+          console.log("chr ", chr);
+          console.log("rightChr ", rightChr);
+
+          if (rightChr === chr) matches++;
+        });
+        console.log("matches", matches);
+        console.log("right_word!.length / 2 ", right_word!.length / 2);
+
+        if (matches >= right_word!.length / 2) {
+          const filterdUser = room.users.filter((usr) => usr.id !== user.id);
+          room.users = [...filterdUser, user];
+
+          filterdUser.forEach((usr) => {
+            usr.ws.send(
+              JSON.stringify({
+                type: MESSAGE_TYPE.MESSAGE,
+                data: {
+                  message: word,
+                  from: usr.ws === ws ? "You" : user.name,
+                },
+              }),
+            );
+          });
+
+          user.ws.send(
             JSON.stringify({
               type: MESSAGE_TYPE.MESSAGE,
               data: {
-                message: word,
-                from: usr.ws === ws ? "You" : user.name,
+                message: "The guessed word was too close",
+                from: user.name,
               },
             }),
           );
-        });
+        } else {
+          room.users.forEach((usr) => {
+            usr.ws.send(
+              JSON.stringify({
+                type: MESSAGE_TYPE.MESSAGE,
+                data: {
+                  message: word,
+                  from: usr.ws === ws ? "You" : user.name,
+                },
+              }),
+            );
+          });
+        }
+
         return;
       }
 
@@ -535,7 +577,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         const filterdUser = room.users.filter((usr) => usr.id !== user.id);
         room.users = [...filterdUser, user];
 
-        room.users.forEach((usr) => {
+        filterdUser.forEach((usr) => {
           usr.ws.send(
             JSON.stringify({
               type: MESSAGE_TYPE.MESSAGE,
@@ -569,9 +611,8 @@ server.on("connection", (ws: ExtendedWebSocket) => {
       console.log("idolUser ", idolUser);
 
       if (idolUser === room.users.length - 1) {
-        const randomIndex = Math.floor(Math.random() * room.users.length)!;
-        const chooser = room.users[randomIndex]!;
-        chooser.ws.send(
+        const admin = room.users.find((usr) => usr.type === "admin");
+        admin?.ws.send(
           JSON.stringify({
             type: MESSAGE_TYPE.ANOTHER_ONE,
           }),

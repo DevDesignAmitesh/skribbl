@@ -39,11 +39,6 @@ export const WordSelection = ({ words, onSelectWord }: WordSelectionProps) => {
     setRandomWords(getRandomWords(words));
   }, [words]);
 
-  useEffect(() => {
-    console.log(timeleft);
-    console.log(randomWords);
-  }, [timeleft]);
-
   const handleSelectWord = (word: string) => {
     if (hasSelectedRef.current) return;
     hasSelectedRef.current = true;
