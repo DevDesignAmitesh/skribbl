@@ -1,5 +1,10 @@
 import { Main } from "@/page/Main";
+import { Suspense } from "react";
 
 export default function Home() {
-  return <Main />
+  return (
+    <Suspense fallback="Loading...">
+      <Main />
+    </Suspense>
+  );
 }
