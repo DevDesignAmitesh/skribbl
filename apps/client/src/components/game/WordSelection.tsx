@@ -89,7 +89,7 @@ function getRandomWords(words: string[]): string[] {
   for (let i = 0; i < words.length; i++) {
     const randomIndex = Math.floor(Math.random() * words.length)!;
     const element = words[randomIndex];
-
+    if (arr.includes(element)) continue;
     if (arr.length === 3) break;
     arr.push(element);
   }
