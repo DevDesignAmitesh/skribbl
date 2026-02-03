@@ -194,11 +194,9 @@ export const Main = () => {
     const ctx = getContext();
     if (!ctx) return;
 
-    // 1️⃣ Get pixel coordinates (for drawing)
     const pos = getCanvasCoordinates(e);
     const from = lastPosRef.current;
 
-    // 2️⃣ Draw LOCALLY using PIXELS
     ctx.beginPath();
     ctx.moveTo(from.x, from.y);
     ctx.lineTo(pos.x, pos.y);
@@ -208,15 +206,13 @@ export const Main = () => {
     ctx.lineJoin = "round";
     ctx.stroke();
 
-    // 3️⃣ Update last position in PIXELS
     lastPosRef.current = pos;
 
-    // 4️⃣ Throttle WS
-    const now = Date.now();
-    if (now - lastSentRef.current < 16) return;
-    lastSentRef.current = now;
+    // we can add it...
+    // const now = Date.now();
+    // if (now - lastSentRef.current < 16) return;
+    // lastSentRef.current = now;
 
-    // 5️⃣ Normalize ONLY for network
     const normalize = (p: { x: number; y: number }) => ({
       x: p.x / canvas.width,
       y: p.y / canvas.height,
@@ -484,12 +480,7 @@ export const Main = () => {
       }
     };
   }, [ws]);
-
-  // TODO: lets see if we need it or not...
-  useEffect(() => {
-    console.log("room ", room);
-  }, [room]);
-
+  
   const isAdmin = player?.type === "admin";
   const isMember = player?.type === "member";
   const isChooser = player?.status === "chooser";
