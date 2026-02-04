@@ -41,7 +41,7 @@ export const LandingHowToPlay = () => {
         if (prev === MAX_STEP) return 1;
         return prev + 1;
       });
-    }, 2500);
+    }, 1500);
   }, []);
 
   const recentStep = stepData[step];

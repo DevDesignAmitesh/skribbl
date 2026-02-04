@@ -4,7 +4,7 @@ import Link from "next/link";
 export const LandingNews = () => {
   return (
     <div className="w-full bg-[#0C2D95] p-2 flex flex-col justify-center items-start lg:items-center text-neutral-100">
-      <div className="flex justify-start items-center gap-24 w-full mb-4">
+      <div className="flex justify-start items-center gap-20 w-full mb-4">
         <Image
           unoptimized
           src={"/news.gif"}

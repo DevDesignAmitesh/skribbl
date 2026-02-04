@@ -1,5 +1,7 @@
 "use client";
 
+import { BlueButton, GreenButton } from "@/components/new/buttons";
+import { Footer } from "@/components/new/footer";
 import { LandingAbout } from "@/components/new/landing-about";
 import { LandingHead } from "@/components/new/landing-head";
 import { LandingHowToPlay } from "@/components/new/landing-how-to-play";
@@ -96,8 +98,8 @@ export default function Landing() {
             <Image
               src={characters[character]}
               alt="avatar"
-              width={90}
-              height={90}
+              width={100}
+              height={100}
               className="w-auto h-auto"
               loading="eager"
             />
@@ -106,18 +108,14 @@ export default function Landing() {
 
           {/* CTAs FOR play or create room */}
           <div className="flex flex-col justify-center items-center gap-2 w-full mt-4">
-            <button className="py-2 text-4xl w-full font-bold bg-green-500 hover:bg-green-600 text-neutral-100 cursor-pointer">
-              Play !
-            </button>
-            <button className="py-2 text-xl w-full font-semibold bg-blue-500 hover:bg-blue-600 text-neutral-100 cursor-pointer">
-              Create private room
-            </button>
+            <GreenButton label="Play !" onClick={() => {}} />
+            <BlueButton label="Create private room" onClick={() => {}} />
           </div>
         </div>
       </div>
 
       {/* section two */}
-      <div className="w-full bg-[#123596] py-16">
+      <div className="w-full bg-[#123596] pt-16 pb-10">
         <div className="w-full max-w-5xl mx-auto px-4 grid lg:grid-cols-3 gap-4 justify-center items-start">
           {/* about section */}
           <LandingAbout />
@@ -128,6 +126,7 @@ export default function Landing() {
           {/* how to play section */}
           <LandingHowToPlay />
         </div>
+        <Footer />
       </div>
     </div>
   );
