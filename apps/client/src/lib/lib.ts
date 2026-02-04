@@ -1,5 +1,5 @@
 // for deployed one
-export const WS_URL = "wss://skribbl-be.baap.one";
+export const WS_URL = "wss://skribbl-be.amitesh.work";
 
 // for localhost
 // export const WS_URL = "ws://localhost:8080";
