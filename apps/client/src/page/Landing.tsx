@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { characters } from "@/lib/lib";
 import Image from "next/image";
 import { useState } from "react";
 
@@ -25,18 +26,6 @@ const languages = [
   { value: "de", label: "German" },
   { value: "pt", label: "Portuguese" },
 ];
-
-const characters: Record<number, string> = {
-  1: "/char/one.png",
-  2: "/char/two.png",
-  3: "/char/three.png",
-  4: "/char/four.png",
-  5: "/char/five.png",
-  6: "/char/six.png",
-  7: "/char/seven.png",
-  8: "/char/eight.png",
-  9: "/char/nine.png",
-};
 
 const MAX_CHARACTER = 9;
 

@@ -1,17 +1,10 @@
 import Image from "next/image";
+import { Logo } from "./logo";
 
 export const LandingHead = () => {
   return (
     <div className="flex flex-col justify-center items-center gap-4">
-      <Image
-        unoptimized
-        src={"/logo.gif"}
-        alt="logo"
-        width={100}
-        height={100}
-        className="w-md"
-        loading="eager"
-      />
+      <Logo size={100} />
       <Image
         src={"/line-avatars.png"}
         alt="logo"
