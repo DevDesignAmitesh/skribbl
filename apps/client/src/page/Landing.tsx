@@ -1,0 +1,134 @@
+"use client";
+
+import { LandingAbout } from "@/components/new/landing-about";
+import { LandingHead } from "@/components/new/landing-head";
+import { LandingHowToPlay } from "@/components/new/landing-how-to-play";
+import { LandingNews } from "@/components/new/landing-news";
+import { SvgArrowLeft, SvgArrowRight } from "@/components/new/svg-arrow";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import Image from "next/image";
+import { useState } from "react";
+
+const languages = [
+  { value: "en", label: "English" },
+  { value: "es", label: "Spanish" },
+  { value: "fr", label: "French" },
+  { value: "de", label: "German" },
+  { value: "pt", label: "Portuguese" },
+];
+
+const characters: Record<number, string> = {
+  1: "/char/one.png",
+  2: "/char/two.png",
+  3: "/char/three.png",
+  4: "/char/four.png",
+  5: "/char/five.png",
+  6: "/char/six.png",
+  7: "/char/seven.png",
+  8: "/char/eight.png",
+  9: "/char/nine.png",
+};
+
+const MAX_CHARACTER = 9;
+
+export default function Landing() {
+  const [character, setCharacter] = useState(1);
+
+  const handleCharacter = (action: "forward" | "back") => {
+    if (action === "back") {
+      setCharacter((prev) => {
+        if (prev === 1) return MAX_CHARACTER;
+        return prev - 1;
+      });
+    } else if (action === "forward") {
+      setCharacter((prev) => {
+        if (prev === MAX_CHARACTER) return 1;
+        return prev + 1;
+      });
+    }
+  };
+  return (
+    <div className="h-auto w-full bg-[url(/landing-bg.png)]">
+      {/* section one */}
+      <div className="w-full py-4 flex flex-col gap-10 justify-center items-center">
+        {/* header */}
+        <LandingHead />
+
+        {/* create/join room */}
+        <div className="w-full max-w-sm h-auto bg-blue-900 p-4 flex flex-col justify-start items-center">
+          {/* name and language section */}
+          <div className="flex justify-center items-center gap-2 w-full">
+            <Input
+              id="playerName"
+              placeholder="Enter your name"
+              // value={"pending"}
+              // onChange={(e) => {}}
+              maxLength={20}
+              className="bg-white text-neutral-900 font-semibold"
+            />
+            <Select
+              value={"en"}
+              // onValueChange={(v) => {}}
+            >
+              <SelectTrigger className="bg-white w-[50%]" id="language">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {languages.map((lang) => (
+                  <SelectItem key={lang.value} value={lang.value}>
+                    {lang.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* chose character */}
+          <div className="flex justify-center items-center gap-4 mt-4">
+            <SvgArrowLeft onClick={() => handleCharacter("back")} />
+            <Image
+              src={characters[character]}
+              alt="avatar"
+              width={90}
+              height={90}
+              className="w-auto h-auto"
+              loading="eager"
+            />
+            <SvgArrowRight onClick={() => handleCharacter("forward")} />
+          </div>
+
+          {/* CTAs FOR play or create room */}
+          <div className="flex flex-col justify-center items-center gap-2 w-full mt-4">
+            <button className="py-2 text-4xl w-full font-bold bg-green-500 hover:bg-green-600 text-neutral-100 cursor-pointer">
+              Play !
+            </button>
+            <button className="py-2 text-xl w-full font-semibold bg-blue-500 hover:bg-blue-600 text-neutral-100 cursor-pointer">
+              Create private room
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* section two */}
+      <div className="w-full bg-[#123596] py-16">
+        <div className="w-full max-w-5xl mx-auto px-4 grid lg:grid-cols-3 gap-4 justify-center items-start">
+          {/* about section */}
+          <LandingAbout />
+
+          {/* news section */}
+          <LandingNews />
+
+          {/* how to play section */}
+          <LandingHowToPlay />
+        </div>
+      </div>
+    </div>
+  );
+}
