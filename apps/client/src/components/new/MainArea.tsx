@@ -1,9 +1,15 @@
+import { useRestContext } from "@/context/rest";
 import { ChatPanel } from "../game/ChatPanel";
 import { DrawArea } from "./DrawArea";
 import { LivePlayers } from "./LivePlayers";
 import { RoomArea } from "./RoomArea";
+import { useWsContext } from "@/context/ws";
+import { WordSelection } from "../game/WordSelection";
 
 export const MainArea = () => {
+  const { view, chooseType, room, chooseMessage } = useRestContext();
+  const { sendGuessedWord } = useWsContext();
+
   return (
     <div
       className="w-full grid gap-2 mt-2
@@ -12,8 +18,20 @@ export const MainArea = () => {
     >
       {/* Center (top on small, middle on lg) */}
       <div className="h-auto row-start-1 lg:col-start-2">
-        <DrawArea />
-        {/* <RoomArea /> */}
+        {chooseType === "chooser" ? (
+          <WordSelection
+            words={room?.room?.custom_word ?? []}
+            onSelectWord={sendGuessedWord}
+          />
+        ) : chooseType === "choosing" ? (
+          <div className="z-100 inset-0 bg-card border border-border text-foreground rounded-lg h-screen flex justify-center items-center">
+            {chooseMessage}
+          </div>
+        ) : view === "create-room" ? (
+          <RoomArea />
+        ) : (
+          <DrawArea />
+        )}
       </div>
 
       {/* Bottom row on small */}

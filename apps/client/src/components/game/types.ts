@@ -5,6 +5,7 @@ export type ViewState =
   | "create-room"
   | "waiting"
   | "share-room"
+  | "error"
   | "summary";
 
 export type chooseState = "chooser" | "choosing" | "guessed";

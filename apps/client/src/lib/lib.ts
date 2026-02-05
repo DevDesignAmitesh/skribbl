@@ -13,6 +13,7 @@ export const random_words = [
   "tree, fish, cloud, cake, cup, key, dinosaur, alien, superhero, snowman, waterfall",
 ];
 
+export const MAX_CHARACTER = 9;
 export const characters: Record<number, string> = {
   1: "/char/one.png",
   2: "/char/two.png",
@@ -32,3 +33,28 @@ export const languages = [
   { value: "de", label: "German" },
   { value: "pt", label: "Portuguese" },
 ];
+
+export const getContext = (
+  canvasRef: React.RefObject<HTMLCanvasElement | null>,
+) => {
+  const canvas = canvasRef.current;
+  if (!canvas) return null;
+  return canvas.getContext("2d");
+};
+
+export const getCanvasCoordinates = (
+  e: React.MouseEvent<HTMLCanvasElement>,
+  canvasRef: React.RefObject<HTMLCanvasElement | null>,
+) => {
+  const canvas = canvasRef.current;
+  if (!canvas) return { x: 0, y: 0 };
+
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+
+  return {
+    x: (e.clientX - rect.left) * scaleX,
+    y: (e.clientY - rect.top) * scaleY,
+  };
+};

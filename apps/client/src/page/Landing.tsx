@@ -15,14 +15,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { characters, languages } from "@/lib/lib";
+import { useRestContext } from "@/context/rest";
+import { useWsContext } from "@/context/ws";
+import { characters, languages, MAX_CHARACTER } from "@/lib/lib";
 import Image from "next/image";
 import { useState } from "react";
 
-const MAX_CHARACTER = 9;
-
-export default function Landing() {
+export default function Landing({ roomId }: { roomId: string | null }) {
   const [character, setCharacter] = useState(1);
+  const [name, setName] = useState<string>("");
+  const [lng, setLng] = useState<string>("en");
 
   const handleCharacter = (action: "forward" | "back") => {
     if (action === "back") {
@@ -37,6 +39,9 @@ export default function Landing() {
       });
     }
   };
+
+  const { handleSetView } = useRestContext();
+  const { handleRoomJoin } = useWsContext();
   return (
     <div className="h-auto w-full bg-[url(/landing-bg.png)]">
       {/* section one */}
@@ -51,16 +56,13 @@ export default function Landing() {
             <Input
               id="playerName"
               placeholder="Enter your name"
-              // value={"pending"}
-              // onChange={(e) => {}}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               maxLength={20}
               className="bg-white text-neutral-900 font-semibold"
             />
-            <Select
-              value={"en"}
-              // onValueChange={(v) => {}}
-            >
-              <SelectTrigger className="bg-white w-[50%]" id="language">
+            <Select value={lng} onValueChange={(v) => setLng(v)}>
+              <SelectTrigger className="bg-white w-[50%]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -89,8 +91,14 @@ export default function Landing() {
 
           {/* CTAs FOR play or create room */}
           <div className="flex flex-col justify-center items-center gap-2 w-full mt-4">
-            <GreenButton label="Play !" onClick={() => {}} />
-            <BlueButton label="Create private room" onClick={() => {}} />
+            <GreenButton
+              label="Play !"
+              onClick={() => handleRoomJoin(roomId, name, character, lng)}
+            />
+            <BlueButton
+              label="Create private room"
+              onClick={() => handleSetView("create-room")}
+            />
           </div>
         </div>
       </div>
