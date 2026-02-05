@@ -4,7 +4,7 @@ import { Logo } from "./logo";
 export const MainHeader = () => {
   return (
     <header className="w-full flex flex-col justify-center items-start gap-2 text-neutral-800">
-      <Logo size={20} />
+      <Logo width="w-xs" />
       <div className="w-full flex justify-between items-center bg-white pr-2">
         {/* timer and round */}
         <div className="flex items-center gap-4">

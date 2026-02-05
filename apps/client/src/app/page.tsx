@@ -5,7 +5,7 @@ import { Suspense } from "react";
 
 export default function Home() {
   return <MainLayout />;
-  // return <Landing />;
+  return <Landing />;
   // return (
   //   <Suspense fallback="Loading...">
   //     <Main />

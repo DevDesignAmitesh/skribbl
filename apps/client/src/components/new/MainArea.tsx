@@ -1,3 +1,4 @@
+import { ChatPanel } from "../game/ChatPanel";
 import { DrawArea } from "./DrawArea";
 import { LivePlayers } from "./LivePlayers";
 import { RoomArea } from "./RoomArea";
@@ -16,11 +17,17 @@ export const MainArea = () => {
       </div>
 
       {/* Bottom row on small */}
-      <div className="grid grid-cols-2 gap-6 row-start-2 lg:contents">
+      <div className="grid grid-cols-2 gap-2 row-start-2 lg:contents">
         <div className="h-96 overflow-y-auto">
           <LivePlayers />
         </div>
-        <div className="h-80 bg-red-300">Right</div>
+        <div className="h-96 overflow-y-auto">
+          <ChatPanel
+            messages={[]}
+            onSendMessage={(input) => {}}
+            currentPlayerId=""
+          />
+        </div>
       </div>
     </div>
   );

@@ -29,9 +29,6 @@ export const ChatPanel = ({
 
   return (
     <div className="bg-card border border-border rounded-lg h-full flex flex-col">
-      <div className="p-3 border-b border-border">
-        <h2 className="font-semibold text-foreground">Chat</h2>
-      </div>
       <div className="flex-1 overflow-y-auto p-3 space-y-1">
         {messages.map((msg) => (
           <div key={msg.id} className="text-sm">
@@ -41,7 +38,7 @@ export const ChatPanel = ({
         ))}
         <div ref={messagesEndRef} />
       </div>
-      <div className="p-3 border-t border-border">
+      <div className="border-t border-border">
         <Input
           placeholder="Type your guess..."
           value={inputValue}

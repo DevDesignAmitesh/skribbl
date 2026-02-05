@@ -4,7 +4,7 @@ import { Logo } from "./logo";
 export const LandingHead = () => {
   return (
     <div className="flex flex-col justify-center items-center gap-4">
-      <Logo size={100} />
+      <Logo width="w-md" />
       <Image
         src={"/line-avatars.png"}
         alt="logo"

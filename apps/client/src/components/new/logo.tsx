@@ -1,14 +1,14 @@
 import Image from "next/image";
 
-export const Logo = ({ size }: { size: number }) => {
+export const Logo = ({ width }: { width: string }) => {
   return (
     <Image
       unoptimized
       src={"/logo.gif"}
       alt="logo"
-      width={size}
-      height={size}
-      className="w-xs"
+      width={100}
+      height={100}
+      className={width}
       loading="eager"
     />
   );

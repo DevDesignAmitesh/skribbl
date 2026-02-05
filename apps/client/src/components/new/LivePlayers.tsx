@@ -52,7 +52,7 @@ export const LivePlayers = () => {
                 />
               )}
             </div>
-            <div className="flex flex-col justify-center items-center font-semibold text-md">
+            <div className="flex flex-col justify-center items-center font-semibold text-sm">
               <p className={`${isYou && "text-blue-500"}`}>
                 {pyr.name} {isYou && "(YOU)"}
               </p>
