@@ -15,17 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { characters } from "@/lib/lib";
+import { characters, languages } from "@/lib/lib";
 import Image from "next/image";
 import { useState } from "react";
-
-const languages = [
-  { value: "en", label: "English" },
-  { value: "es", label: "Spanish" },
-  { value: "fr", label: "French" },
-  { value: "de", label: "German" },
-  { value: "pt", label: "Portuguese" },
-];
 
 const MAX_CHARACTER = 9;
 

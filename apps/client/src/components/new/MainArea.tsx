@@ -1,4 +1,6 @@
+import { DrawArea } from "./DrawArea";
 import { LivePlayers } from "./LivePlayers";
+import { RoomArea } from "./RoomArea";
 
 export const MainArea = () => {
   return (
@@ -8,7 +10,10 @@ export const MainArea = () => {
       lg:grid-rows-none lg:grid-cols-[2fr_7fr_3fr]"
     >
       {/* Center (top on small, middle on lg) */}
-      <div className="h-80 bg-red-300 row-start-1 lg:col-start-2">Center</div>
+      <div className="h-auto row-start-1 lg:col-start-2">
+        {/* <DrawArea /> */}
+        <RoomArea />
+      </div>
 
       {/* Bottom row on small */}
       <div className="grid grid-cols-2 gap-6 row-start-2 lg:contents">

@@ -10,6 +10,7 @@ export const MainHeader = () => {
         <div className="flex items-center gap-4">
           <div className="relative flex items-center justify-center">
             <Image
+              unoptimized
               src="/clock.gif"
               alt="timer"
               width={40}
@@ -27,7 +28,7 @@ export const MainHeader = () => {
         </div>
 
         {/* room status */}
-        <p className="text-sm font-semibold">WAITING</p>
+        <p className="text-sm font-bold text-neutral-700">WAITING</p>
 
         {/* setting icon (MOCK) */}
         <Image

@@ -34,11 +34,15 @@ export const LivePlayers = () => {
         const isYou = pyr.id === userId;
         const isAdmin = pyr.type === "admin";
         return (
-          <div className="flex justify-between items-start bg-white w-full p-1">
+          <div
+            key={pyr.id}
+            className="flex justify-between items-start bg-white w-full p-1"
+          >
             <div className="flex flex-col justify-center items-center">
               <p className="font-semibold">#{idx + 1}</p>
               {isAdmin && (
                 <Image
+                  unoptimized
                   src={"/owner.gif"}
                   alt="avatar"
                   width={40}
