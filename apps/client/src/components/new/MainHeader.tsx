@@ -27,8 +27,17 @@ export const MainHeader = () => {
           <p className="text-xl font-semibold">Round 1 of 3</p>
         </div>
 
-        {/* room status */}
-        <p className="text-sm font-bold text-neutral-700">WAITING</p>
+        {/* room.status === "waiting" */}
+        {/* <p className="text-sm font-bold text-neutral-700">WAITING</p> */}
+
+        {/* room.status === "ongoing" */}
+        {/* game header */}
+        <div className="rounded-lg flex items-center py-1 justify-center">
+          {/* Hidden Word - Center */}
+          <div className="text-2xl font-mono tracking-[0.3em] text-foreground">
+            _____
+          </div>
+        </div>
 
         {/* setting icon (MOCK) */}
         <Image

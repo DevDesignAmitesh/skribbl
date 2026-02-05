@@ -12,8 +12,8 @@ export const MainArea = () => {
     >
       {/* Center (top on small, middle on lg) */}
       <div className="h-auto row-start-1 lg:col-start-2">
-        {/* <DrawArea /> */}
-        <RoomArea />
+        <DrawArea />
+        {/* <RoomArea /> */}
       </div>
 
       {/* Bottom row on small */}

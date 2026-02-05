@@ -1,3 +1,3 @@
 export const DrawArea = () => {
-  return <div>DrawArea</div>
-}
+  return <canvas className={`bg-white rounded border w-full h-full`} />;
+};
