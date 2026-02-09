@@ -1,7 +1,5 @@
 "use client";
 
-import { create } from "zustand";
-import React, { useRef } from "react";
 import {
   ChatMessage,
   chooseState,
@@ -10,59 +8,96 @@ import {
   ViewState,
 } from "@/components/game/types";
 import { HalfWord, Room, User } from "@repo/common/common";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
-interface RestStore {
+interface RestContextProps {
   view: ViewState;
-  viewRef: React.RefObject<ViewState | null>;
-
-  roomId: string | null;
-  rightWord: string | null;
-
-  halfWord: HalfWord[];
-  chooseType: chooseState | null;
-  chooseMessage: string;
-  totalLength: number[];
-
-  currentColor: string;
-  strokeWidth: number;
-  tool: tool;
-
-  isDrawing: boolean;
-  lastPosRef: React.RefObject<{ x: number; y: number } | null>;
-  canvasRef: React.RefObject<HTMLCanvasElement | null>;
-
-  player: Player;
+  viewRef: React.RefObject<ViewState>;
   messages: ChatMessage[];
-  room: { room: Room | null; users: User[] };
-
-  /* setters (same names) */
-  setRoomId: (val: string | null) => void;
-  setRightWord: (val: string | null) => void;
-  setHalfWord: (val: HalfWord[]) => void;
-  setChooseType: (val: chooseState | null) => void;
-  setChooseMessage: (val: string) => void;
-  setTotalLength: (val: number[]) => void;
-  setCurrentColor: (val: string) => void;
-  setStrokeWidth: (val: number) => void;
-  setTool: (val: tool) => void;
-  setPlayer: (val: Partial<Player>) => void;
-  setMessages: (
-    val: ChatMessage[] | ((p: ChatMessage[]) => ChatMessage[]),
-  ) => void;
-  setRoom: (val: { room: Room | null; users: User[] }) => void;
-
-  /* handlers */
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
+  setHalfWord: React.Dispatch<React.SetStateAction<HalfWord[]>>;
+  halfWord: HalfWord[];
+  setChooseType: React.Dispatch<React.SetStateAction<chooseState | null>>;
+  chooseType: chooseState | null;
+  setRoomId: React.Dispatch<React.SetStateAction<string | null>>;
+  roomId: string | null;
+  setChooseMessage: React.Dispatch<React.SetStateAction<string>>;
+  chooseMessage: string;
+  setCurrentColor: React.Dispatch<React.SetStateAction<string>>;
+  currentColor: string;
+  setStrokeWidth: React.Dispatch<React.SetStateAction<number>>;
+  strokeWidth: number;
+  setTool: React.Dispatch<React.SetStateAction<tool>>;
+  tool: tool;
+  setRightWord: React.Dispatch<React.SetStateAction<string | null>>;
+  rightWord: string | null;
+  setTotalLength: React.Dispatch<React.SetStateAction<number[]>>;
+  totalLength: number[];
   handleSetView: (val: ViewState) => void;
-  startDrawing: (e: React.MouseEvent<HTMLCanvasElement>) => void;
+  canvasRef: React.RefObject<HTMLCanvasElement | null>;
+  player: Player;
+  setPlayer: React.Dispatch<React.SetStateAction<Player>>;
+  setRoom: React.Dispatch<
+    React.SetStateAction<{
+      room: Room | null;
+      users: User[];
+    }>
+  >;
+  room: { room: Room | null; users: User[] };
+  startDrawing: (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => void;
   stopDrawing: () => void;
+  isDrawing: boolean;
+  lastPosRef: React.RefObject<{
+    x: number;
+    y: number;
+  } | null>;
 }
 
-export const useRestContext = create<RestStore>((set, get) => {
-  const canvasRef = React.createRef<HTMLCanvasElement>();
-  const viewRef = React.createRef<ViewState>();
-  const lastPosRef = React.createRef<{ x: number; y: number } | null>();
+const RestContext = createContext<RestContextProps | null>(null);
 
-  viewRef.current = "landing";
+export const RestContextProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [view, setView] = useState<ViewState>("landing");
+  const viewRef = useRef<ViewState>("landing");
+  const [roomId, setRoomId] = useState<string | null>(null);
+  const [rightWord, setRightWord] = useState<string | null>(null);
+  const [halfWord, setHalfWord] = useState<HalfWord[]>([]);
+  const [chooseType, setChooseType] = useState<chooseState | null>(null);
+  const [chooseMessage, setChooseMessage] = useState<string>("");
+  const [totalLength, setTotalLength] = useState<number[]>([]);
+  const lastPosRef = useRef<{ x: number; y: number } | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [currentColor, setCurrentColor] = useState("#000000");
+  const [strokeWidth, setStrokeWidth] = useState(2);
+  const [tool, setTool] = useState<tool>("pencil");
+
+  const [player, setPlayer] = useState<Player>({
+    id: crypto.randomUUID(),
+    name: "",
+    avatarIndex: 2,
+  });
+
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+
+  const [room, setRoom] = useState<{ room: Room | null; users: User[] }>({
+    room: null,
+    users: [],
+  });
+
+  const handleSetView = (view: ViewState) => {
+    setView(view);
+    viewRef.current = view;
+  };
 
   const getCanvasCoordinates = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -78,70 +113,65 @@ export const useRestContext = create<RestStore>((set, get) => {
     };
   };
 
-  return {
-    /* initial state */
-    view: "landing",
-    viewRef,
-
-    roomId: null,
-    rightWord: null,
-
-    halfWord: [],
-    chooseType: null,
-    chooseMessage: "",
-    totalLength: [],
-
-    currentColor: "#000000",
-    strokeWidth: 2,
-    tool: "pencil",
-
-    isDrawing: false,
-    lastPosRef,
-    canvasRef,
-
-    player: {
-      id: crypto.randomUUID(),
-      name: "",
-      avatarIndex: 2,
-    },
-
-    messages: [],
-    room: { room: null, users: [] },
-
-    /* setters */
-    setRoomId: (roomId) => set({ roomId }),
-    setRightWord: (rightWord) => set({ rightWord }),
-    setHalfWord: (halfWord) => set({ halfWord }),
-    setChooseType: (chooseType) => set({ chooseType }),
-    setChooseMessage: (chooseMessage) => set({ chooseMessage }),
-    setTotalLength: (totalLength) => set({ totalLength }),
-    setCurrentColor: (currentColor) => set({ currentColor }),
-    setStrokeWidth: (strokeWidth) => set({ strokeWidth }),
-    setTool: (tool) => set({ tool }),
-    setPlayer: (player) =>
-      set((prev) => ({ player: { ...prev.player, player } })),
-    setRoom: (room) => set({ room }),
-
-    setMessages: (val) =>
-      set((state) => ({
-        messages: typeof val === "function" ? val(state.messages) : val,
-      })),
-
-    /* handlers */
-    handleSetView: (view) => {
-      set({ view });
-      viewRef.current = view;
-    },
-
-    startDrawing: (e) => {
-      const pos = getCanvasCoordinates(e);
-      lastPosRef.current = pos;
-      set({ isDrawing: true });
-    },
-
-    stopDrawing: () => {
-      lastPosRef.current = null;
-      set({ isDrawing: false });
-    },
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const pos = getCanvasCoordinates(e);
+    lastPosRef.current = pos;
+    setIsDrawing(true);
   };
-});
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+    lastPosRef.current = null;
+  };
+
+  useEffect(() => {
+    console.log("view ", view);
+  }, [view]);
+
+  return (
+    <RestContext.Provider
+      value={{
+        view,
+        roomId,
+        player,
+        setPlayer,
+        setRoom,
+        messages,
+        setMessages,
+        setRoomId,
+        viewRef,
+        rightWord,
+        setRightWord,
+        handleSetView,
+        chooseType,
+        halfWord,
+        setChooseType,
+        setHalfWord,
+        chooseMessage,
+        setChooseMessage,
+        room,
+        setTotalLength,
+        totalLength,
+        canvasRef,
+        startDrawing,
+        stopDrawing,
+        isDrawing,
+        lastPosRef,
+        currentColor,
+        setCurrentColor,
+        setStrokeWidth,
+        setTool,
+        strokeWidth,
+        tool,
+      }}
+    >
+      {children}
+    </RestContext.Provider>
+  );
+};
+
+export const useRestContext = () => {
+  const context = useContext(RestContext);
+  if (!context) throw new Error("ws context not found");
+  return context;
+};

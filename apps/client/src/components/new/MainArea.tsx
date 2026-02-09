@@ -11,9 +11,11 @@ export const MainArea = () => {
     useRestContext();
   const { sendGuessedWord, handleSendMessage } = useWsContext();
 
-  const isMember = player.type === "member";
+  const isMember = player?.type === "member";
 
+  console.log("player ", player);
   console.log("isMember ", isMember);
+  console.log("messages ", messages);
 
   return (
     <div
@@ -36,7 +38,7 @@ export const MainArea = () => {
         view === "create-room" ? (
           <RoomArea />
         ) : view === "waiting" && isMember ? (
-          <div className="bg-card border border-border text-muted-foreground rounded-lg h-full flex justify-center items-center">
+          <div className="bg-card text-muted-foreground rounded-lg h-full w-full flex justify-center items-center">
             waiting for the admin to start the game
           </div>
         ) : (

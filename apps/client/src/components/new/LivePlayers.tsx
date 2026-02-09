@@ -5,8 +5,11 @@ import Image from "next/image";
 export const LivePlayers = () => {
   const { room, player } = useRestContext();
 
-  const sortedPlayers = [...room.users].sort((a, b) => b.points - a.points);
+  const sortedPlayers = room.users.sort((a, b) => b.points - a.points);
   const userId = player.id;
+
+  console.log("player ", player);
+  console.log("sortedPlayers ", sortedPlayers);
 
   return (
     <div className="h-full w-full flex flex-col justify-start items-center gap-2">

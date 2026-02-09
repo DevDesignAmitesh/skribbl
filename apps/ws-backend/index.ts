@@ -83,7 +83,6 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         JSON.stringify({
           type: parsedData.type,
           data: {
-            roomUrl: `${process.env.FRONTEND_URL}?roomId=${roomId}`,
             room,
           },
         }),

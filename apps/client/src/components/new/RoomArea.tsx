@@ -202,17 +202,16 @@ export const RoomArea = () => {
               onClick={() => {
                 window.navigator.clipboard.writeText(
                   `${window.location.hostname}?roomId=${roomId}`,
-                )
-                setMessages((prev) => ([
+                );
+                setMessages((prev) => [
                   ...prev,
                   {
+                    id: crypto.randomUUID(),
                     from: "client",
                     message: "Link copied to clip board",
-                    id: crypto.randomUUID()   
-                  }
-                ]))
-              }
-            }
+                  },
+                ]);
+              }}
             />
           )}
         </div>

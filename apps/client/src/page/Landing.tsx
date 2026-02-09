@@ -19,7 +19,8 @@ import { useRestContext } from "@/context/rest";
 import { useWsContext } from "@/context/ws";
 import { characters, languages, MAX_CHARACTER } from "@/lib/lib";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function Landing({ roomId }: { roomId: string | null }) {
   const [character, setCharacter] = useState(1);
@@ -42,6 +43,11 @@ export default function Landing({ roomId }: { roomId: string | null }) {
 
   const { handleSetView } = useRestContext();
   const { handleRoomJoin } = useWsContext();
+
+  useEffect(() => {
+    localStorage.setItem("name", name);
+    localStorage.setItem("character", String(character));
+  }, [name, character]);
   return (
     <div className="h-auto w-full bg-[url(/landing-bg.png)]">
       {/* section one */}
@@ -97,7 +103,13 @@ export default function Landing({ roomId }: { roomId: string | null }) {
             />
             <BlueButton
               label="Create private room"
-              onClick={() => handleSetView("create-room")}
+              onClick={() => {
+                if (!name.trim()) {
+                  toast.error("Add your name");
+                  return;
+                }
+                handleSetView("create-room");
+              }}
             />
           </div>
         </div>
