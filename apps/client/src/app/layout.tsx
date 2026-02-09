@@ -3,8 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { GoogleAnalytics } from "@next/third-parties/google";
-import { WsContextProvider } from "@/context/ws";
-import { RestContextProvider } from "@/context/rest";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,9 +29,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <RestContextProvider>
-          <WsContextProvider>{children}</WsContextProvider>
-        </RestContextProvider>
+        {children}
         <Toaster position="top-right" richColors />
 
         {/* Google Analytics) */}

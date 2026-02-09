@@ -1,33 +1,13 @@
+import { useRestContext } from "@/context/rest";
 import { characters } from "@/lib/lib";
 import Image from "next/image";
 
-const players = [
-  {
-    name: "hello",
-    id: "1",
-    points: 20,
-    character: 1,
-    type: "member",
-  },
-  {
-    name: "choco",
-    id: "2",
-    points: 40,
-    character: 3,
-    type: "admin",
-  },
-  {
-    name: "nana",
-    id: "3",
-    points: 60,
-    character: 5,
-    type: "member",
-  },
-];
-
 export const LivePlayers = () => {
-  const sortedPlayers = players; // some logic according to points
-  const userId = "2"; // will take from the props
+  const { room, player } = useRestContext();
+
+  const sortedPlayers = [...room.users].sort((a, b) => b.points - a.points);
+  const userId = player.id;
+
   return (
     <div className="h-full w-full flex flex-col justify-start items-center gap-2">
       {sortedPlayers.map((pyr, idx) => {

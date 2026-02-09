@@ -13,17 +13,12 @@ export default function page() {
 
   const { view } = useRestContext();
 
+  console.log("view ", view);
 
   if (view === "landing") {
     return <Landing roomId={roomId} />;
-  } else if (view === "create-room" || view === "share-room") {
+  } else {
     return <MainLayout />;
-  } else if (view === "summary") {
-    return <div>summary</div>;
-  } else if (view === "waiting") {
-    return <div>waiting</div>;
-  } else if (view === "error") {
-    return <div>error hai bsdk</div>;
   }
 
   // return (

@@ -30,7 +30,7 @@ export const RoomArea = () => {
   };
 
   const { handleCreateRoom, handleStartRoom } = useWsContext();
-  const { roomId } = useRestContext();
+  const { roomId, setMessages } = useRestContext();
 
   return (
     <div className="w-full h-auto bg-[#35394A] text-neutral-100 p-2 flex flex-col justify-start items-center">
@@ -199,11 +199,20 @@ export const RoomArea = () => {
           {roomId && (
             <BlueButton
               label="Invite"
-              onClick={() =>
+              onClick={() => {
                 window.navigator.clipboard.writeText(
                   `${window.location.hostname}?roomId=${roomId}`,
                 )
+                setMessages((prev) => ([
+                  ...prev,
+                  {
+                    from: "client",
+                    message: "Link copied to clip board",
+                    id: crypto.randomUUID()   
+                  }
+                ]))
               }
+            }
             />
           )}
         </div>

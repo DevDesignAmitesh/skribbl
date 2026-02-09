@@ -1,384 +1,303 @@
 "use client";
 
+import { create } from "zustand";
+import React from "react";
 import { getCanvasCoordinates, getContext, WS_URL } from "@/lib/lib";
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { useRestContext } from "./rest";
 import { MESSAGE_TYPE, Room, User } from "@repo/common/common";
 import { toast } from "sonner";
+import { useRestContext } from "./rest";
 
-interface WsContextProps {
+interface WsStore {
   ws: WebSocket | null;
+
   handleRoomJoin: (
     roomId: string | null,
     name: string,
     character: number,
     language: string,
   ) => void;
+
   handleCreateRoom: (room: Room) => void;
   handleStartRoom: () => void;
   sendGuessedWord: (word: string) => void;
-  draw: (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => void;
+  handleSendMessage: (message: string) => void;
+  draw: (e: React.MouseEvent<HTMLCanvasElement>) => void;
 }
 
-const WsContext = createContext<WsContextProps | null>(null);
+export const useWsContext = create<WsStore>(() => {
+  const ws = new WebSocket(WS_URL);
 
-export const WsContextProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
-  const [ws, setWs] = useState<WebSocket | null>(null);
+  ws.onmessage = (event) => {
+    const parsedData = JSON.parse(event.data);
 
-  const {
-    handleSetView,
-    setPlayer,
-    player,
-    setRoom,
-    setMessages,
-    setRoomId,
-    roomId,
-    viewRef,
-    setRightWord,
-    setHalfWord,
-    setChooseType,
-    setChooseMessage,
-    setTotalLength,
-    canvasRef,
-    isDrawing,
-    lastPosRef,
-    tool,
-    strokeWidth,
-    currentColor,
-  } = useRestContext();
+    const {
+      handleSetView,
+      setPlayer,
+      player,
+      setRoom,
+      setMessages,
+      setRoomId,
+      viewRef,
+      setRightWord,
+      setHalfWord,
+      setChooseType,
+      setChooseMessage,
+      setTotalLength,
+      canvasRef,
+    } = useRestContext.getState();
 
-  useEffect(() => {
-    const ws = new WebSocket(WS_URL);
-    setWs(ws);
+    if (
+      parsedData.type === MESSAGE_TYPE.JOIN_ROOM ||
+      parsedData.type === MESSAGE_TYPE.JOIN_RANDOM
+    ) {
+      const { room } = parsedData.data;
+      setRoom(room);
 
-    ws.onmessage = (event) => {
-      const parsedData = JSON.parse(event.data);
+      console.log("player ", player);
 
-      if (
-        parsedData.type === MESSAGE_TYPE.JOIN_ROOM ||
-        parsedData.type === MESSAGE_TYPE.JOIN_RANDOM
-      ) {
-        const { room } = parsedData.data as {
-          room: { room: Room; users: User[] };
-        };
-        setRoom(room);
-        const user = room.users.find((usr: User) => usr.id === player.id);
-        if (!user) return;
-        if (user.type === "admin") return;
+      const user = room.users.find((u: User) => u.id === player.id);
+      console.log("user ", user);
+      if (!user) return;
 
-        if (room.room.status === "creating") {
-          handleSetView("waiting");
-        } else if (room.room.status === "ongoing") {
-          handleSetView("share-room");
-        } else if (room.room.status === "ended") {
-          alert("room ended");
-          window.location.reload();
-        }
+      if (user.type !== "admin") {
+        if (room.room.status === "creating") handleSetView("waiting");
+        else if (room.room.status === "ongoing") handleSetView("share-room");
+        else if (room.room.status === "ended") window.location.reload();
+      }
 
-        setPlayer((prev) => ({
+      setPlayer({ status: user.status, type: user.type });
+    }
+
+    if (parsedData.type === MESSAGE_TYPE.CREATE_ROOM) {
+      const { room } = parsedData.data;
+      setRoom(room);
+      setRoomId(room.room.id);
+    }
+
+    if (parsedData.type === MESSAGE_TYPE.MESSAGE) {
+      const { message, from, room, word } = parsedData.data;
+      if (word) setRightWord(word);
+      if (room) setRoom(room);
+
+      if (viewRef.current === "landing") {
+        toast.error(from, { description: message });
+      } else {
+        setMessages((prev) => [
           ...prev,
-          status: user.status,
-          type: user.type,
-        }));
+          { id: crypto.randomUUID(), message, from },
+        ]);
       }
+    }
 
-      if (parsedData.type === MESSAGE_TYPE.CREATE_ROOM) {
-        const { room } = parsedData.data;
-        setRoom(room);
-        setRoomId(room.room.id);
-      }
+    if (parsedData.type === MESSAGE_TYPE.RIGHT_WORD) {
+      setRightWord(parsedData.data.word);
+    }
 
-      if (parsedData.type === MESSAGE_TYPE.MESSAGE) {
-        const { message, from, room, word } = parsedData.data;
-        if (word) {
-          setRightWord(word);
-        }
-        if (room) {
-          setRoom(room);
-        }
-        if (viewRef.current === "landing") {
-          toast.error(from, {
-            description: message,
-          });
-        } else {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: crypto.randomUUID(),
-              message,
-              from,
-            },
-          ]);
-        }
-      }
+    if (parsedData.type === MESSAGE_TYPE.YOU_ARE_CHOOSER) {
+      const { room } = parsedData.data;
+      setRoom(room);
+      setHalfWord([]);
+      setRightWord(null);
+      setChooseType("chooser");
 
-      if (parsedData.type === MESSAGE_TYPE.YOU_ARE_CHOOSER) {
-        const { room } = parsedData.data;
-        setRoom(room);
-        setHalfWord([]);
-        setRightWord(null);
-        const user = room.users.find((usr: User) => usr.id === player.id);
-        if (!user) return;
-        setChooseType("chooser");
-        setPlayer((prev) => ({
-          ...prev,
-          status: user.status,
-        }));
-      }
+      const user = room.users.find((u: User) => u.id === player.id);
+      if (user) setPlayer({ status: user.status });
+    }
 
-      if (parsedData.type === MESSAGE_TYPE.SOMEONE_CHOOSING) {
-        const { room, message } = parsedData.data;
-        setRoom(room);
-        setHalfWord([]);
-        setRightWord(null);
-        const user = room.users.find((usr: User) => usr.id === player.id);
-        if (!user) return;
-        setChooseType("choosing");
-        setPlayer((prev) => ({
-          ...prev,
-          status: user.status,
-        }));
-        setChooseMessage(message);
-      }
+    if (parsedData.type === MESSAGE_TYPE.SOMEONE_CHOOSING) {
+      const { room, message } = parsedData.data;
+      setRoom(room);
+      setHalfWord([]);
+      setRightWord(null);
+      setChooseType("choosing");
+      setChooseMessage(message);
 
-      if (parsedData.type === MESSAGE_TYPE.CHOOSEN_WORD) {
-        // totalLength: number[]
-        const { totalLength } = parsedData.data;
-        setChooseType(null);
-        setHalfWord([]);
-        setRightWord(null);
-        setTotalLength(totalLength);
-        handleSetView("share-room");
-      }
+      const user = room.users.find((u: User) => u.id === player.id);
+      if (user) setPlayer({ status: user.status });
+    }
 
-      if (parsedData.type === MESSAGE_TYPE.DRAWING) {
-        const ctx = getContext(canvasRef);
-        if (!ctx) return;
+    if (parsedData.type === MESSAGE_TYPE.CHOOSEN_WORD) {
+      setChooseType(null);
+      setHalfWord([]);
+      setRightWord(null);
+      setTotalLength(parsedData.data.totalLength);
+      handleSetView("share-room");
+    }
 
-        const canvas = canvasRef.current;
-        if (!canvas) return;
+    if (parsedData.type === MESSAGE_TYPE.DRAWING) {
+      const ctx = getContext(canvasRef);
+      const canvas = canvasRef.current;
+      if (!ctx || !canvas) return;
 
-        const { payload } = parsedData.data;
-        const { from, to, color, width, tool } = payload;
+      const { from, to, color, width } = parsedData.data.payload;
 
-        // Denormalize coordinates
-        const fromX = from.x * canvas.width;
-        const fromY = from.y * canvas.height;
-        const toX = to.x * canvas.width;
-        const toY = to.y * canvas.height;
+      ctx.beginPath();
+      ctx.moveTo(from.x * canvas.width, from.y * canvas.height);
+      ctx.lineTo(to.x * canvas.width, to.y * canvas.height);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width * canvas.width;
+      ctx.lineCap = "round";
+      ctx.stroke();
+    }
 
-        ctx.save();
+    if (parsedData.type === MESSAGE_TYPE.CLEAR_CANVAS) {
+      const canvas = canvasRef.current;
+      const ctx = getContext(canvasRef);
+      if (!canvas || !ctx) return;
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
-        ctx.beginPath();
-        ctx.moveTo(fromX, fromY);
-        ctx.lineTo(toX, toY);
-        ctx.strokeStyle = color;
-        ctx.lineWidth = width * canvas.width;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-        ctx.stroke();
+    if (parsedData.type === MESSAGE_TYPE.GAME_END) {
+      setRoom(parsedData.data.room);
+      handleSetView("summary");
+    }
 
-        ctx.restore();
-      }
-    };
+    if (parsedData.type === MESSAGE_TYPE.ROOM_DELETED) {
+      window.location.replace(process.env.NEXT_PUBLIC_FRONTEND_URL!);
+    }
+  };
 
-    ws.onerror = () => {
-      handleSetView("error");
-    };
-  }, []);
+  ws.onerror = () => {
+    useRestContext.getState().handleSetView("error");
+  };
 
-  const handleRoomJoin = (
-    roomId: string | null,
-    name: string,
-    character: number,
-    language: string,
-  ) => {
-    if (!ws) return;
+  return {
+    ws,
 
-    const userId = crypto.randomUUID();
+    handleRoomJoin: (roomId, name, character, language) => {
+      const { setPlayer, player } = useRestContext.getState();
 
-    setPlayer((prev) => ({
-      ...prev,
-      avatarIndex: character,
-      id: userId,
-      name,
-    }));
+      setPlayer({ avatarIndex: character, id: player.id, name });
 
-    if (roomId) {
       ws.send(
         JSON.stringify({
-          type: MESSAGE_TYPE.JOIN_ROOM,
+          type: roomId ? MESSAGE_TYPE.JOIN_ROOM : MESSAGE_TYPE.JOIN_RANDOM,
+          data: roomId
+            ? { roomId, name, userId: player.id, character }
+            : { name, userId: player.id, character, language },
+        }),
+      );
+    },
+
+    handleCreateRoom: (room) => {
+      const { player, setMessages } = useRestContext.getState();
+      if (room.custom_word.length <= 3) {
+        setMessages((p) => [
+          ...p,
+          {
+            id: crypto.randomUUID(),
+            from: "client",
+            message: "atleast 3 words should be in customize words",
+          },
+        ]);
+        return;
+      }
+
+      ws.send(
+        JSON.stringify({
+          type: MESSAGE_TYPE.CREATE_ROOM,
           data: {
-            roomId,
-            name,
-            userId,
-            character,
+            ...room,
+            userName: player.name,
+            userId: player.id,
+            character: player.avatarIndex,
           },
         }),
       );
+    },
 
-      return;
-    }
+    handleStartRoom: () => {
+      const { roomId, player } = useRestContext.getState();
+      ws.send(
+        JSON.stringify({
+          type: MESSAGE_TYPE.START_GAME,
+          data: { roomId, userId: player.id },
+        }),
+      );
+    },
 
-    ws.send(
-      JSON.stringify({
-        type: MESSAGE_TYPE.JOIN_RANDOM,
-        data: {
-          name,
-          userId,
-          character,
-          language,
-        },
-      }),
-    );
+    sendGuessedWord: (word) => {
+      const { roomId, player, setMessages } = useRestContext.getState();
+      if (!word.trim()) {
+        setMessages((p) => [
+          ...p,
+          {
+            id: crypto.randomUUID(),
+            from: "client",
+            message: "choose a word first",
+          },
+        ]);
+        return;
+      }
+
+      ws.send(
+        JSON.stringify({
+          type: MESSAGE_TYPE.CHOOSEN_WORD,
+          data: { roomId, word, userId: player.id },
+        }),
+      );
+    },
+
+    handleSendMessage: (message) => {
+      const { roomId, player } = useRestContext.getState();
+      ws.send(
+        JSON.stringify({
+          type: MESSAGE_TYPE.GUESS_WORD,
+          data: { roomId, word: message, userId: player.id },
+        }),
+      );
+    },
+
+    draw: (e) => {
+      const {
+        isDrawing,
+        lastPosRef,
+        canvasRef,
+        tool,
+        strokeWidth,
+        currentColor,
+        roomId,
+        player,
+      } = useRestContext.getState();
+
+      if (!isDrawing || !lastPosRef.current) return;
+
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const ctx = getContext(canvasRef);
+      if (!ctx) return;
+
+      const pos = getCanvasCoordinates(e, canvasRef);
+      const from = lastPosRef.current;
+
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.strokeStyle = tool === "eraser" ? "#FFFFFF" : currentColor;
+      ctx.lineWidth = strokeWidth;
+      ctx.stroke();
+
+      lastPosRef.current = pos;
+
+      ws.send(
+        JSON.stringify({
+          type: MESSAGE_TYPE.DRAWING,
+          data: {
+            payload: {
+              from: { x: from.x / canvas.width, y: from.y / canvas.height },
+              to: { x: pos.x / canvas.width, y: pos.y / canvas.height },
+              color: tool === "eraser" ? "#FFFFFF" : currentColor,
+              width: strokeWidth / canvas.width,
+              tool,
+              roomId,
+            },
+            roomId,
+            userId: player.id,
+          },
+        }),
+      );
+    },
   };
-
-  const handleCreateRoom = (room: Room) => {
-    if (!ws) return;
-
-    if (room.custom_word.length <= 3) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          from: "client",
-          message: "atleast 3 words should be in customize words",
-        },
-      ]);
-      return;
-    }
-
-    ws.send(
-      JSON.stringify({
-        type: MESSAGE_TYPE.CREATE_ROOM,
-        data: {
-          ...room,
-          userName: player.name,
-          userId: player.id,
-          character: player.avatarIndex,
-        },
-      }),
-    );
-  };
-
-  const handleStartRoom = () => {
-    if (!ws) return;
-
-    ws.send(
-      JSON.stringify({
-        type: MESSAGE_TYPE.START_GAME,
-        data: {
-          roomId,
-          userId: player.id,
-        },
-      }),
-    );
-  };
-
-  const sendGuessedWord = (word: string) => {
-    if (!ws) return;
-
-    if (!word.trim()) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          message: "choose a word first",
-          from: "client",
-        },
-      ]);
-      return;
-    }
-
-    ws.send(
-      JSON.stringify({
-        type: MESSAGE_TYPE.CHOOSEN_WORD,
-        data: {
-          roomId,
-          word,
-          userId: player.id,
-        },
-      }),
-    );
-  };
-
-  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !lastPosRef.current) return;
-    if (!ws) return;
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = getContext(canvasRef);
-    if (!ctx) return;
-
-    const pos = getCanvasCoordinates(e, canvasRef);
-    const from = lastPosRef.current;
-
-    ctx.beginPath();
-    ctx.moveTo(from.x, from.y);
-    ctx.lineTo(pos.x, pos.y);
-    ctx.strokeStyle = tool === "eraser" ? "#FFFFFF" : currentColor;
-    ctx.lineWidth = strokeWidth;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.stroke();
-
-    lastPosRef.current = pos;
-
-    // we can add it...
-    // const now = Date.now();
-    // if (now - lastSentRef.current < 16) return;
-    // lastSentRef.current = now;
-
-    const normalize = (p: { x: number; y: number }) => ({
-      x: p.x / canvas.width,
-      y: p.y / canvas.height,
-    });
-
-    const payload = {
-      type: "stroke",
-      from: normalize(from),
-      to: normalize(pos),
-      color: tool === "eraser" ? "#FFFFFF" : currentColor,
-      width: strokeWidth / canvas.width,
-      tool,
-      roomId,
-    };
-
-    ws.send(
-      JSON.stringify({
-        type: MESSAGE_TYPE.DRAWING,
-        data: {
-          payload,
-          roomId,
-          userId: player.id,
-        },
-      }),
-    );
-  };
-  return (
-    <WsContext.Provider
-      value={{
-        ws,
-        handleRoomJoin,
-        handleCreateRoom,
-        handleStartRoom,
-        sendGuessedWord,
-        draw,
-      }}
-    >
-      {children}
-    </WsContext.Provider>
-  );
-};
-
-export const useWsContext = () => {
-  const context = useContext(WsContext);
-  if (!context) throw new Error("ws context not found");
-  return context;
-};
+});

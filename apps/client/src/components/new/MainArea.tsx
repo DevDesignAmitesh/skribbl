@@ -7,8 +7,13 @@ import { useWsContext } from "@/context/ws";
 import { WordSelection } from "../game/WordSelection";
 
 export const MainArea = () => {
-  const { view, chooseType, room, chooseMessage } = useRestContext();
-  const { sendGuessedWord } = useWsContext();
+  const { view, chooseType, room, chooseMessage, messages, player } =
+    useRestContext();
+  const { sendGuessedWord, handleSendMessage } = useWsContext();
+
+  const isMember = player.type === "member";
+
+  console.log("isMember ", isMember);
 
   return (
     <div
@@ -24,11 +29,16 @@ export const MainArea = () => {
             onSelectWord={sendGuessedWord}
           />
         ) : chooseType === "choosing" ? (
-          <div className="z-100 inset-0 bg-card border border-border text-foreground rounded-lg h-screen flex justify-center items-center">
+          <div className="bg-card border border-border text-foreground rounded-lg h-full w-full flex justify-center items-center">
             {chooseMessage}
           </div>
-        ) : view === "create-room" ? (
+        ) : // TODO: if view is wating then we can show the admin while creating room (optional)
+        view === "create-room" ? (
           <RoomArea />
+        ) : view === "waiting" && isMember ? (
+          <div className="bg-card border border-border text-muted-foreground rounded-lg h-full flex justify-center items-center">
+            waiting for the admin to start the game
+          </div>
         ) : (
           <DrawArea />
         )}
@@ -41,9 +51,9 @@ export const MainArea = () => {
         </div>
         <div className="h-96 overflow-y-auto">
           <ChatPanel
-            messages={[]}
-            onSendMessage={(input) => {}}
-            currentPlayerId=""
+            messages={messages}
+            onSendMessage={handleSendMessage}
+            currentPlayerId={player.id}
           />
         </div>
       </div>
