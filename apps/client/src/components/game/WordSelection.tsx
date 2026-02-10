@@ -48,7 +48,7 @@ export const WordSelection = ({ words, onSelectWord }: WordSelectionProps) => {
 
   return (
     <>
-      <div className="bg-card border border-border rounded-lg h-screen flex flex-col items-center justify-center p-8">
+      <div className="bg-card border border-border rounded-lg h-full flex flex-col items-center justify-center p-8">
         <h2 className="text-2xl font-bold text-foreground mb-2">
           Choose a Word
         </h2>

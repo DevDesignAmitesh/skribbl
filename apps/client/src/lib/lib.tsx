@@ -1,6 +1,8 @@
 // for deployed one
 // export const WS_URL = "wss://skribbl-be.amitesh.work";
 
+import { HalfWord } from "@repo/common/common";
+
 // for localhost
 export const WS_URL = "ws://localhost:8080";
 
@@ -57,4 +59,46 @@ export const getCanvasCoordinates = (
     x: (e.clientX - rect.left) * scaleX,
     y: (e.clientY - rect.top) * scaleY,
   };
+};
+
+export const formatHalfWord = (word: HalfWord[], totalLength: number[]) => {
+  return totalLength.map((nm, groupIdx) => {
+    const arr = Array.from({ length: nm });
+
+    return (
+      <div key={groupIdx} className="inline-block mr-4">
+        {arr.map((_, idx) => {
+          const halfWord = word.find((wr) => wr.idx == idx);
+          if (halfWord) {
+            return (
+              <span key={idx} className="mr-1">
+                {halfWord.elm}
+              </span>
+            );
+          }
+          return (
+            <span key={idx} className="mr-1">
+              _
+            </span>
+          );
+        })}
+      </div>
+    );
+  });
+};
+
+export const formatHiddenWord = (totalLength: number[]) => {
+  return totalLength.map((nm, groupIdx) => {
+    const arr = Array.from({ length: nm });
+
+    return (
+      <div key={groupIdx} className="inline-block mr-4">
+        {arr.map((_, idx) => (
+          <span key={idx} className="mr-1">
+            _
+          </span>
+        ))}
+      </div>
+    );
+  });
 };

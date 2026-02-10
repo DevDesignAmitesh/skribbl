@@ -124,10 +124,6 @@ export const RestContextProvider = ({
     lastPosRef.current = null;
   };
 
-  useEffect(() => {
-    console.log("view ", view);
-  }, [view]);
-
   return (
     <RestContext.Provider
       value={{

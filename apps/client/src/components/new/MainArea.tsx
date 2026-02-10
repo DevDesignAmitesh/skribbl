@@ -13,10 +13,6 @@ export const MainArea = () => {
 
   const isMember = player?.type === "member";
 
-  console.log("player ", player);
-  console.log("isMember ", isMember);
-  console.log("messages ", messages);
-
   return (
     <div
       className="w-full grid gap-2 mt-2

@@ -8,9 +8,6 @@ export const LivePlayers = () => {
   const sortedPlayers = room.users.sort((a, b) => b.points - a.points);
   const userId = player.id;
 
-  console.log("player ", player);
-  console.log("sortedPlayers ", sortedPlayers);
-
   return (
     <div className="h-full w-full flex flex-col justify-start items-center gap-2">
       {sortedPlayers.map((pyr, idx) => {

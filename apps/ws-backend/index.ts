@@ -576,7 +576,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         const filterdUser = room.users.filter((usr) => usr.id !== user.id);
         room.users = [...filterdUser, user];
 
-        filterdUser.forEach((usr) => {
+        room.users.forEach((usr) => {
           usr.ws.send(
             JSON.stringify({
               type: MESSAGE_TYPE.MESSAGE,
@@ -599,7 +599,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         );
       }
 
-      // here we are checking if everyuser is idol except the chooser then
+      // here we are checking if every user is idol except the chooser then
       // starting the next round
       let idolUser: number = 0;
 

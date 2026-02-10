@@ -16,6 +16,7 @@ interface WsContextProps {
   ) => void;
   handleCreateRoom: (room: Room) => void;
   handleStartRoom: () => void;
+  handleHalfTime: () => void;
   sendGuessedWord: (word: string) => void;
   handleSendMessage: (message: string) => void;
   draw: (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => void;
@@ -28,6 +29,7 @@ export const WsContextProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
+  console.log("getting called");
   const [ws, setWs] = useState<WebSocket | null>(null);
 
   const {
@@ -56,6 +58,10 @@ export const WsContextProvider = ({
   useEffect(() => {
     const ws = new WebSocket(WS_URL);
     setWs(ws);
+  }, [])
+
+  useEffect(() => {
+    if(!ws) return;
 
     ws.onmessage = (event) => {
       const parsedData = JSON.parse(event.data);
@@ -70,10 +76,8 @@ export const WsContextProvider = ({
           room: { room: Room; users: User[] };
         };
         setRoom(room);
-        console.log("player ", player);
         const user = room.users.find((usr: User) => usr.id === player.id);
         if (!user) return;
-        console.log("user ", user);
         if (user.type === "admin") return;
 
         if (room.room.status === "creating") {
@@ -225,6 +229,7 @@ export const WsContextProvider = ({
       }
 
       if (parsedData.type === MESSAGE_TYPE.ANOTHER_ONE) {
+        console.log("called");
         setTimeout(() => {
           handleStartRoom();
         }, 2000);
@@ -244,7 +249,7 @@ export const WsContextProvider = ({
       console.log("ws error ", err);
       handleSetView("error");
     };
-  }, []);
+  }, [ws]);
 
   const handleRoomJoin = (
     roomId: string | null,
@@ -414,9 +419,6 @@ export const WsContextProvider = ({
       y: p.y / canvas.height,
     });
 
-    console.log("roomId ", roomId);
-    console.log("room.room?.id ", room.room?.id);
-
     const payload = {
       type: "stroke",
       from: normalize(from),
@@ -437,6 +439,25 @@ export const WsContextProvider = ({
       }),
     );
   };
+
+  const handleHalfTime = () => {
+    if (!ws) return;
+
+    ws.send(
+      JSON.stringify({
+        type: MESSAGE_TYPE.HALF_TIME,
+        data: {
+          roomId: roomId ?? room.room?.id,
+          userId: player.id,
+        },
+      }),
+    );
+  };
+
+  useEffect(() => {
+    console.log("ws ", ws);
+  }, [ws])
+
   return (
     <WsContext.Provider
       value={{
@@ -447,6 +468,7 @@ export const WsContextProvider = ({
         sendGuessedWord,
         draw,
         handleSendMessage,
+        handleHalfTime,
       }}
     >
       {children}
