@@ -24,6 +24,8 @@ export const MainHeader = () => {
   };
 
   useEffect(() => {
+    if(room.room?.status === "creating") return;
+    
     const interval = setInterval(() => {
       const remaining = Math.max(
         0,
@@ -47,9 +49,12 @@ export const MainHeader = () => {
     }, 500); // 500ms = smoother + safer
 
     return () => clearInterval(interval);
-  }, [room.room?.roundEndsAt!, onTimeUp]);
+  }, [room.room?.roundEndsAt!, onTimeUp, room.room?.status]);
 
   const isLowTime = timeRemaining <= 10;
+
+  console.log("rightWord ", rightWord);
+  console.log("totalLength ", totalLength);
 
   return (
     <header className="w-full flex flex-col justify-center items-start gap-2 text-neutral-800">

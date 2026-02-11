@@ -102,3 +102,22 @@ export const formatHiddenWord = (totalLength: number[]) => {
     );
   });
 };
+
+export const colors = [
+  "#000000", // Black
+  "#FFFFFF", // White
+  "#EF4444", // Red
+  "#F97316", // Orange
+  "#EAB308", // Yellow
+  "#22C55E", // Green
+  "#3B82F6", // Blue
+  "#8B5CF6", // Purple
+  "#EC4899", // Pink
+  "#78716C", // Brown
+];
+
+export const strokeWidths = [
+  { value: 2, label: "Thin" },
+  { value: 6, label: "Medium" },
+  { value: 12, label: "Thick" },
+];

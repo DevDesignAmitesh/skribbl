@@ -22,6 +22,7 @@ interface WsContextProps {
   ) => void;
   handleCreateRoom: (room: Room) => void;
   handleStartRoom: () => void;
+  clearCanvas: () => void;
   handleHalfTime: () => void;
   sendGuessedWord: (word: string) => void;
   handleSendMessage: (message: string) => void;
@@ -169,10 +170,14 @@ export const WsContextProvider = ({
 
       if (parsedData.type === MESSAGE_TYPE.CHOOSEN_WORD) {
         // totalLength: number[]
-        const { totalLength } = parsedData.data;
+        const { totalLength, word } = parsedData.data;
+        if (word) {
+          setRightWord(word);
+        } else {
+          setRightWord(null);
+        }
         setChooseType(null);
         setHalfWord([]);
-        setRightWord(null);
         setTotalLength(totalLength);
         handleSetView("share-room");
       }
@@ -248,7 +253,7 @@ export const WsContextProvider = ({
               },
             }),
           );
-          
+
           // ⚠️ Important:
           // This logic was originally using `roomId` from the initial render.
           // Since this `useEffect` depends only on `ws`, it does NOT re-run when `roomId` updates.
@@ -281,7 +286,7 @@ export const WsContextProvider = ({
   }, [ws]);
 
   useEffect(() => {
-    roomIdRef.current = roomId ?? room?.room?.id ?? null;
+    roomIdRef.current = roomId ?? room.room?.id ?? null;
   }, [roomId, room]);
 
   const handleRoomJoin = (
@@ -355,7 +360,7 @@ export const WsContextProvider = ({
       JSON.stringify({
         type: MESSAGE_TYPE.START_GAME,
         data: {
-          roomId: roomId ?? room.room?.id,
+          roomId: roomIdRef.current,
           userId: player.id,
         },
       }),
@@ -382,7 +387,7 @@ export const WsContextProvider = ({
       JSON.stringify({
         type: MESSAGE_TYPE.CHOOSEN_WORD,
         data: {
-          roomId: roomId ?? room?.room?.id,
+          roomId: roomIdRef.current,
           word,
           userId: player.id,
         },
@@ -397,7 +402,7 @@ export const WsContextProvider = ({
       JSON.stringify({
         type: MESSAGE_TYPE.GUESS_WORD,
         data: {
-          roomId: roomId ?? room?.room?.id,
+          roomId: roomIdRef.current,
           word: message,
           userId: player.id,
         },
@@ -453,7 +458,7 @@ export const WsContextProvider = ({
         type: MESSAGE_TYPE.DRAWING,
         data: {
           payload,
-          roomId: roomId ?? room?.room?.id,
+          roomId: roomIdRef.current,
           userId: player.id,
         },
       }),
@@ -467,7 +472,21 @@ export const WsContextProvider = ({
       JSON.stringify({
         type: MESSAGE_TYPE.HALF_TIME,
         data: {
-          roomId: roomId ?? room.room?.id,
+          roomId: roomIdRef.current,
+          userId: player.id,
+        },
+      }),
+    );
+  };
+
+  const clearCanvas = () => {
+    if (!ws) return;
+
+    ws.send(
+      JSON.stringify({
+        type: MESSAGE_TYPE.CLEAR_CANVAS,
+        data: {
+          roomId: roomIdRef.current,
           userId: player.id,
         },
       }),
@@ -485,6 +504,7 @@ export const WsContextProvider = ({
         draw,
         handleSendMessage,
         handleHalfTime,
+        clearCanvas,
       }}
     >
       {children}

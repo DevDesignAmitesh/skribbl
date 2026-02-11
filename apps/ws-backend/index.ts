@@ -430,6 +430,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
             type: parsedData.type,
             data: {
               totalLength,
+              word: usr.ws === user.ws && right_word,
             },
           }),
         );
