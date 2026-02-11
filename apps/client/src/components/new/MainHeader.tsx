@@ -78,7 +78,7 @@ export const MainHeader = () => {
           </div>
 
           <p className="text-xl font-semibold">
-            Round {room.room?.latest_round} of {room.room?.total_round}
+            Round {room.room?.latest_round} of {room.room?.rounds}
           </p>
         </div>
 

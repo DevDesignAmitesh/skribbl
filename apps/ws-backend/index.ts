@@ -5,6 +5,7 @@ import {
   MESSAGE_TYPE,
 } from "@repo/common/common";
 import WebSocket, { WebSocketServer } from "ws";
+import { random_words } from "./utils";
 
 interface ExtendedWebSocket extends WebSocket {
   userId: string;
@@ -17,6 +18,11 @@ let rooms: {
   room: Room;
   users: User[];
 }[] = [];
+
+const generate = () => {
+  const randomIndex = Math.floor(Math.random() * random_words.length);
+  return random_words[randomIndex]?.split(", ")!;
+};
 
 // roomId and right_word
 let rightWords: Map<string, string> = new Map();
@@ -36,16 +42,16 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         character,
         userName,
         id,
-        custom_word,
         status,
         userId,
       } = parsedData.data;
+
+      const custom_word = generate();
 
       const roomId = id;
 
       // why?? because if we are using just a normal setinterval timer then it is based on
       // the performance of client like number of tabs opened and etc...
-
       const time_based_draw_time = Date.now() + draw_time * 1000;
 
       ws.roomId = id;
@@ -340,7 +346,10 @@ server.on("connection", (ws: ExtendedWebSocket) => {
             data: {
               room,
               round: room.room.latest_round,
-              message: `${chooser.name} is choosing`,
+              chooser: {
+                name: chooser.name,
+                character: chooser.character,
+              },
             },
           }),
         );

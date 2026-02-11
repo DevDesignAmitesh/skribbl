@@ -62,7 +62,7 @@ export const GameSummary = ({
   }, [onRestart]);
 
   return (
-    <div className="min-h-screen bg-secondary flex items-center justify-center p-4">
+    <div className="h-full bg-secondary flex items-center justify-center p-4">
       {showConfetti && <Confetti />}
 
       <div className="bg-card border border-border rounded-2xl p-8 max-w-md w-full shadow-lg">

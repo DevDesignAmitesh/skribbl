@@ -27,8 +27,8 @@ interface RestContextProps {
   chooseType: chooseState | null;
   setRoomId: React.Dispatch<React.SetStateAction<string | null>>;
   roomId: string | null;
-  setChooseMessage: React.Dispatch<React.SetStateAction<string>>;
-  chooseMessage: string;
+  chooser: {name: string, character: number } | null;
+  setChooser: React.Dispatch<React.SetStateAction<{name: string, character: number } | null>>;
   setCurrentColor: React.Dispatch<React.SetStateAction<string>>;
   currentColor: string;
   setStrokeWidth: React.Dispatch<React.SetStateAction<number>>;
@@ -73,8 +73,8 @@ export const RestContextProvider = ({
   const [rightWord, setRightWord] = useState<string | null>(null);
   const [halfWord, setHalfWord] = useState<HalfWord[]>([]);
   const [chooseType, setChooseType] = useState<chooseState | null>(null);
-  const [chooseMessage, setChooseMessage] = useState<string>("");
   const [totalLength, setTotalLength] = useState<number[]>([]);
+  const [chooser, setChooser] = useState<{name: string, character: number } | null>(null);
   const lastPosRef = useRef<{ x: number; y: number } | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentColor, setCurrentColor] = useState("#000000");
@@ -143,8 +143,7 @@ export const RestContextProvider = ({
         halfWord,
         setChooseType,
         setHalfWord,
-        chooseMessage,
-        setChooseMessage,
+        setChooser,
         room,
         setTotalLength,
         totalLength,
@@ -159,6 +158,7 @@ export const RestContextProvider = ({
         setTool,
         strokeWidth,
         tool,
+        chooser,
       }}
     >
       {children}

@@ -48,36 +48,44 @@ export const WordSelection = ({ words, onSelectWord }: WordSelectionProps) => {
 
   return (
     <>
-      <div className="bg-card border border-border rounded-lg h-full flex flex-col items-center justify-center p-8">
-        <h2 className="text-2xl font-bold text-foreground mb-2">
-          Choose a Word
-        </h2>
-        <p className="text-muted-foreground mb-8">Select one word to draw</p>
+      <div className="w-full h-full bg-black/80 backdrop-blur-sm flex items-center justify-center">
+        <div className="w-full h-full flex flex-col items-center justify-center text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-accent mb-3">
+            Choose a Word
+          </h2>
 
-        <div className="flex gap-6">
-          {randomWords.map((word, index) => (
-            <button
-              key={index}
-              onClick={() => handleSelectWord(word)}
-              className={cn(
-                "w-48 h-32 rounded-lg border-2 flex items-center justify-center",
-                "text-xl font-semibold transition-all duration-200",
-                "bg-background hover:bg-accent",
-                "hover:border-primary hover:scale-105 hover:shadow-lg",
-                "hover:border-border",
-              )}
-            >
-              {word}
-            </button>
-          ))}
+          <p className="text-accent mb-10 text-lg">
+            Select one word to draw
+          </p>
+
+          <div className="flex flex-col md:flex-row gap-6">
+            {randomWords.map((word, index) => (
+              <button
+                key={index}
+                onClick={() => handleSelectWord(word)}
+                className={cn(
+                  "w-40 h-20 rounded-xl border-2 flex items-center justify-center",
+                  "text-lg font-semibold transition-all duration-200",
+                  "bg-background hover:bg-accent",
+                  "hover:border-primary hover:scale-105 hover:shadow-2xl",
+                  "active:scale-95",
+                )}
+              >
+                {word}
+              </button>
+            ))}
+          </div>
+
+          <p className="text-base text-accent-foreground mt-10">
+            Auto-selects in{" "}
+            <span className="text-accent font-bold text-lg">
+              {timeleft}s
+            </span>{" "}
+            if no choice is made
+          </p>
         </div>
-
-        <p className="text-sm text-muted-foreground mt-8">
-          Auto-selects in{" "}
-          <span className="text-foreground font-semibold">{timeleft}s</span> if
-          no choice is made
-        </p>
       </div>
+
       <Sound url="/timer.mp3" playStatus="PLAYING" />
     </>
   );

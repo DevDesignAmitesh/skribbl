@@ -1,7 +1,13 @@
 "use client";
 
 import { getCanvasCoordinates, getContext, WS_URL } from "@/lib/lib";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useRestContext } from "./rest";
 import { MESSAGE_TYPE, Room, User } from "@repo/common/common";
 import { toast } from "sonner";
@@ -31,6 +37,7 @@ export const WsContextProvider = ({
 }) => {
   console.log("getting called");
   const [ws, setWs] = useState<WebSocket | null>(null);
+  const roomIdRef = useRef<string | null>(null);
 
   const {
     handleSetView,
@@ -44,7 +51,7 @@ export const WsContextProvider = ({
     setRightWord,
     setHalfWord,
     setChooseType,
-    setChooseMessage,
+    setChooser,
     setTotalLength,
     canvasRef,
     isDrawing,
@@ -58,10 +65,10 @@ export const WsContextProvider = ({
   useEffect(() => {
     const ws = new WebSocket(WS_URL);
     setWs(ws);
-  }, [])
+  }, []);
 
   useEffect(() => {
-    if(!ws) return;
+    if (!ws) return;
 
     ws.onmessage = (event) => {
       const parsedData = JSON.parse(event.data);
@@ -146,7 +153,7 @@ export const WsContextProvider = ({
       }
 
       if (parsedData.type === MESSAGE_TYPE.SOMEONE_CHOOSING) {
-        const { room, message } = parsedData.data;
+        const { room, chooser } = parsedData.data;
         setRoom(room);
         setHalfWord([]);
         setRightWord(null);
@@ -157,7 +164,7 @@ export const WsContextProvider = ({
           ...prev,
           status: user.status,
         }));
-        setChooseMessage(message);
+        setChooser(chooser);
       }
 
       if (parsedData.type === MESSAGE_TYPE.CHOOSEN_WORD) {
@@ -229,9 +236,31 @@ export const WsContextProvider = ({
       }
 
       if (parsedData.type === MESSAGE_TYPE.ANOTHER_ONE) {
-        console.log("called");
         setTimeout(() => {
-          handleStartRoom();
+          if (!ws) return;
+
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.START_GAME,
+              data: {
+                roomId: roomIdRef.current,
+                userId: player.id,
+              },
+            }),
+          );
+          
+          // ⚠️ Important:
+          // This logic was originally using `roomId` from the initial render.
+          // Since this `useEffect` depends only on `ws`, it does NOT re-run when `roomId` updates.
+          // Because of that, any callback (like setTimeout or ws event handlers) inside here
+          // captures a stale `roomId` value (often `undefined` from first render).
+          //
+          // This is a classic React "stale closure" issue where async callbacks
+          // hold onto old state values from the render they were created in.
+          // Fix: Use a ref (e.g., roomIdRef.current) to always access the latest roomId
+          // instead of relying on the state value captured in this effect.
+
+          // handleStartRoom()
         }, 2000);
       }
 
@@ -250,6 +279,10 @@ export const WsContextProvider = ({
       handleSetView("error");
     };
   }, [ws]);
+
+  useEffect(() => {
+    roomIdRef.current = roomId ?? room?.room?.id ?? null;
+  }, [roomId, room]);
 
   const handleRoomJoin = (
     roomId: string | null,
@@ -299,19 +332,6 @@ export const WsContextProvider = ({
   const handleCreateRoom = (room: Room) => {
     if (!ws) return;
 
-    // TODO: we should check this thing in server also
-    if (room.custom_word.length <= 3) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          from: "client",
-          message: "atleast 3 words should be in customize words",
-        },
-      ]);
-      return;
-    }
-
     const name = localStorage.getItem("name");
     const character = Number(localStorage.getItem("character"));
 
@@ -335,7 +355,7 @@ export const WsContextProvider = ({
       JSON.stringify({
         type: MESSAGE_TYPE.START_GAME,
         data: {
-          roomId,
+          roomId: roomId ?? room.room?.id,
           userId: player.id,
         },
       }),
@@ -453,10 +473,6 @@ export const WsContextProvider = ({
       }),
     );
   };
-
-  useEffect(() => {
-    console.log("ws ", ws);
-  }, [ws])
 
   return (
     <WsContext.Provider
