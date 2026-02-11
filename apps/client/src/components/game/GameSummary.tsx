@@ -3,6 +3,8 @@ import { Avatar } from "./AvatarSelector";
 import { Confetti } from "./Confetti";
 import { Trophy, Medal } from "lucide-react";
 import { User } from "@repo/common/common";
+import Image from "next/image";
+import { characters } from "@/lib/lib";
 
 interface GameSummaryProps {
   players: User[];
@@ -62,11 +64,11 @@ export const GameSummary = ({
   }, [onRestart]);
 
   return (
-    <div className="h-full bg-secondary flex items-center justify-center p-4">
+    <div className="h-full bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
       {showConfetti && <Confetti />}
 
-      <div className="bg-card border border-border rounded-2xl p-8 max-w-md w-full shadow-lg">
-        <h1 className="text-2xl font-bold text-foreground text-center mb-6">
+      <div className="rounded-2xl p-8 max-w-md w-full">
+        <h1 className="text-2xl font-bold text-accent text-center mb-6">
           🎉 Game Ends 🎉
         </h1>
 
@@ -83,8 +85,15 @@ export const GameSummary = ({
               <div className="flex items-center justify-center w-6">
                 {getRankIcon(index + 1)}
               </div>
-              <Avatar index={player.character} size="sm" />
-              <span className="flex-1 text-sm font-medium text-foreground truncate">
+              <Image
+                src={characters[player.character]}
+                alt="avatar"
+                width={24}
+                height={24}
+                className="w-auto h-auto"
+                loading="eager"
+              />
+              <span className="flex-1 text-sm font-medium text-primary truncate">
                 {player.name}
               </span>
               <span className="text-sm font-bold text-primary">
@@ -94,10 +103,9 @@ export const GameSummary = ({
           ))}
         </div>
 
-        <p className="text-center text-muted-foreground mt-6 text-sm">
+        <p className="text-center text-accent mt-6 text-sm">
           Redirecting in{" "}
-          <span className="font-bold text-foreground">{timeRemaining}</span>{" "}
-          seconds
+          <span className="font-bold text-accent">{timeRemaining}</span> seconds
         </p>
       </div>
     </div>
