@@ -178,6 +178,8 @@ server.on("connection", (ws: ExtendedWebSocket, req) => {
             type: parsedData.type,
             data: {
               room,
+              from: "server",
+              message: `${usr.ws === ws ? "You" : name} joined the room`,
             },
           }),
         ),
@@ -241,6 +243,8 @@ server.on("connection", (ws: ExtendedWebSocket, req) => {
             type: parsedData.type,
             data: {
               room: availableRoom,
+              from: "server",
+              message: `${usr.ws === ws ? "You" : name} joined the room`,
             },
           }),
         ),
@@ -306,8 +310,7 @@ server.on("connection", (ws: ExtendedWebSocket, req) => {
           );
         });
         rightWords.delete(room.room.id);
-        const filterdRooms = rooms.filter((rm) => rm.room.id !== room.room.id);
-        rooms = filterdRooms;
+        room.room.total_round = 0;
         return;
       }
 
@@ -327,9 +330,6 @@ server.on("connection", (ws: ExtendedWebSocket, req) => {
           usr.turn = false;
         });
       }
-
-      // const randomIndex = Math.floor(Math.random() * room.users.length)!;
-      // const chooser = room.users[randomIndex]!;
 
       let chooser: User;
 

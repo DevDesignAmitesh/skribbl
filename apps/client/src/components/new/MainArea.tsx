@@ -13,7 +13,8 @@ import Sound from "react-sound";
 export const MainArea = () => {
   const { view, chooseType, room, chooser, messages, player, rightWord } =
     useRestContext();
-  const { sendGuessedWord, handleSendMessage } = useWsContext();
+  const { sendGuessedWord, handleSendMessage, handleStartRoom } =
+    useWsContext();
 
   const isMember = player?.type === "member";
 
@@ -56,9 +57,10 @@ export const MainArea = () => {
               rightWord={view === "round-summary" ? rightWord : null}
               players={room.users}
               redirectTime={10}
-              onRestart={() =>
-                window.location.replace(process.env.NEXT_PUBLIC_FRONTEND_URL!)
-              }
+              // onRestart={() =>
+              //   window.location.replace(process.env.NEXT_PUBLIC_FRONTEND_URL!)
+              // }
+              onRestart={handleStartRoom}
             />
             {!rightWord && <Sound url="/gameover.mp3" playStatus="PLAYING" />}
           </>

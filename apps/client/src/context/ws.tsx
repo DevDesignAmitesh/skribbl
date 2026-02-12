@@ -85,13 +85,25 @@ export const WsContextProvider = ({
         parsedData.type === MESSAGE_TYPE.JOIN_ROOM ||
         parsedData.type === MESSAGE_TYPE.JOIN_RANDOM
       ) {
-        const { room } = parsedData.data as {
+        const { room, from, message } = parsedData.data as {
           room: { room: Room; users: User[] };
+          from: string;
+          message: string;
         };
         setRoomJoin(true);
         setTimeout(() => {
           setRoomJoin(false);
         }, 2000);
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            message,
+            from,
+          },
+        ]);
+
         setRoom(room);
         const user = room.users.find((usr: User) => usr.id === player.id);
         if (!user) return;
@@ -236,7 +248,7 @@ export const WsContextProvider = ({
         setTimeout(() => {
           setRoomLeft(false);
         }, 2000);
-        
+
         setMessages((prev) => [
           ...prev,
           {
