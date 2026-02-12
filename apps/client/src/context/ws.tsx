@@ -21,6 +21,7 @@ interface WsContextProps {
     language: string,
   ) => void;
   handleCreateRoom: (room: Room) => void;
+  gameStarting: boolean
   handleStartRoom: () => void;
   clearCanvas: () => void;
   handleHalfTime: () => void;
@@ -36,9 +37,9 @@ export const WsContextProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  console.log("getting called");
   const [ws, setWs] = useState<WebSocket | null>(null);
   const roomIdRef = useRef<string | null>(null);
+  const [gameStarting, setGameStarting] = useState<boolean>(false);
 
   const {
     handleSetView,
@@ -237,24 +238,13 @@ export const WsContextProvider = ({
       if (parsedData.type === MESSAGE_TYPE.GAME_END) {
         const { room } = parsedData.data;
         setRoom(room);
+        setRightWord(null);
         handleSetView("summary");
       }
 
       if (parsedData.type === MESSAGE_TYPE.ANOTHER_ONE) {
         setTimeout(() => {
-          if (!ws) return;
-
-          ws.send(
-            JSON.stringify({
-              type: MESSAGE_TYPE.START_GAME,
-              data: {
-                roomId: roomIdRef.current,
-                userId: player.id,
-              },
-            }),
-          );
-
-          // ⚠️ Important:
+          // Important:
           // This logic was originally using `roomId` from the initial render.
           // Since this `useEffect` depends only on `ws`, it does NOT re-run when `roomId` updates.
           // Because of that, any callback (like setTimeout or ws event handlers) inside here
@@ -264,9 +254,15 @@ export const WsContextProvider = ({
           // hold onto old state values from the render they were created in.
           // Fix: Use a ref (e.g., roomIdRef.current) to always access the latest roomId
           // instead of relying on the state value captured in this effect.
-
-          // handleStartRoom()
+          handleStartRoom();
         }, 2000);
+      }
+
+      if (parsedData.type === MESSAGE_TYPE.ROUND_SUMMARY) {
+        const { room, rightWord } = parsedData.data;
+        setRoom(room);
+        setRightWord(rightWord);
+        handleSetView("round-summary");
       }
 
       if (parsedData.type === MESSAGE_TYPE.HALF_WORD) {
@@ -356,15 +352,39 @@ export const WsContextProvider = ({
   const handleStartRoom = () => {
     if (!ws) return;
 
+    /**
+     * first we will send round_summary so that the user can see it
+     *
+     * and then after 3 seconds we are not send to start new game
+     *
+     * TODO: there is one catch that if the game is finished then first it will show the
+     * summary and then also the round ends summary which is repeting
+     * but okayish we will see it
+     */
+
     ws.send(
       JSON.stringify({
-        type: MESSAGE_TYPE.START_GAME,
+        type: MESSAGE_TYPE.ROUND_SUMMARY,
         data: {
           roomId: roomIdRef.current,
           userId: player.id,
         },
       }),
     );
+
+    setGameStarting(true);
+    setTimeout(() => {
+      ws.send(
+        JSON.stringify({
+          type: MESSAGE_TYPE.START_GAME,
+          data: {
+            roomId: roomIdRef.current,
+            userId: player.id,
+          },
+        }),
+      );
+    setGameStarting(false);
+    }, 3000);
   };
 
   const sendGuessedWord = (word: string) => {
@@ -505,6 +525,7 @@ export const WsContextProvider = ({
         handleSendMessage,
         handleHalfTime,
         clearCanvas,
+        gameStarting,
       }}
     >
       {children}

@@ -11,7 +11,7 @@ import { GameSummary } from "../game/GameSummary";
 import Sound from "react-sound";
 
 export const MainArea = () => {
-  const { view, chooseType, room, chooser, messages, player } =
+  const { view, chooseType, room, chooser, messages, player, rightWord } =
     useRestContext();
   const { sendGuessedWord, handleSendMessage } = useWsContext();
 
@@ -50,16 +50,17 @@ export const MainArea = () => {
         ) : // TODO: if view is wating then we can show the admin while creating room (optional)
         view === "create-room" ? (
           <RoomArea />
-        ) : view === "summary" ? (
+        ) : view === "summary" || view === "round-summary" ? (
           <>
             <GameSummary
+              rightWord={view === "round-summary" ? rightWord : null}
               players={room.users}
               redirectTime={10}
               onRestart={() =>
                 window.location.replace(process.env.NEXT_PUBLIC_FRONTEND_URL!)
               }
             />
-            <Sound url="/gameover.mp3" playStatus="PLAYING" />
+            {!rightWord && <Sound url="/gameover.mp3" playStatus="PLAYING" />}
           </>
         ) : view === "waiting" && isMember ? (
           <div className="bg-card text-muted-foreground rounded-lg h-full w-full flex justify-center items-center">

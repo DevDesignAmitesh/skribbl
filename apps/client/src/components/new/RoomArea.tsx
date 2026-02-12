@@ -17,7 +17,7 @@ export const RoomArea = () => {
   const [language, setLanguage] = useState<string>("en");
   const [drawTime, setDrawTime] = useState<number>(45);
   const [rounds, setRounds] = useState<number>(2);
-  const { handleCreateRoom, handleStartRoom } = useWsContext();
+  const { handleCreateRoom, handleStartRoom, gameStarting } = useWsContext();
   const { roomId, setMessages } = useRestContext();
 
   return (
@@ -163,7 +163,10 @@ export const RoomArea = () => {
               }
             />
           ) : (
-            <GreenButton label="Start!" onClick={handleStartRoom} />
+            <GreenButton
+              label={gameStarting ? "Starting..." : "Start!"}
+              onClick={gameStarting ? () => {} : handleStartRoom}
+            />
           )}
           {roomId && (
             <BlueButton

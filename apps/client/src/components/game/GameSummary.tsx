@@ -10,6 +10,7 @@ interface GameSummaryProps {
   players: User[];
   onRestart: () => void;
   redirectTime?: number;
+  rightWord: string | null;
 }
 
 const getRankIcon = (rank: number) => {
@@ -33,6 +34,7 @@ export const GameSummary = ({
   players,
   onRestart,
   redirectTime = 10,
+  rightWord,
 }: GameSummaryProps) => {
   const [timeRemaining, setTimeRemaining] = useState(redirectTime);
   const [showConfetti, setShowConfetti] = useState(true);
@@ -41,6 +43,8 @@ export const GameSummary = ({
   const sortedPlayers = [...players].sort((a, b) => b.points - a.points);
 
   useEffect(() => {
+    if (rightWord) return;
+
     const timer = setInterval(() => {
       setTimeRemaining((prev) => {
         if (prev <= 1) {
@@ -61,16 +65,22 @@ export const GameSummary = ({
       clearInterval(timer);
       clearTimeout(confettiTimer);
     };
-  }, [onRestart]);
+  }, [onRestart, rightWord]);
 
   return (
     <div className="h-full bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-      {showConfetti && <Confetti />}
+      {showConfetti && !rightWord && <Confetti />}
 
       <div className="rounded-2xl p-8 max-w-md w-full">
-        <h1 className="text-2xl font-bold text-accent text-center mb-6">
-          🎉 Game Ends 🎉
-        </h1>
+        {rightWord ? (
+          <div className="text-2xl font-mono tracking-[0.3em] text-accent text-center mb-4">
+            Right word was "{rightWord}"
+          </div>
+        ) : (
+          <h1 className="text-2xl font-bold text-accent text-center mb-6">
+            🎉 Game Ends 🎉
+          </h1>
+        )}
 
         <div className="bg-muted rounded-xl p-4 space-y-3">
           {sortedPlayers.map((player, index) => (
@@ -103,10 +113,13 @@ export const GameSummary = ({
           ))}
         </div>
 
-        <p className="text-center text-accent mt-6 text-sm">
-          Redirecting in{" "}
-          <span className="font-bold text-accent">{timeRemaining}</span> seconds
-        </p>
+        {!rightWord && (
+          <p className="text-center text-accent mt-6 text-sm">
+            Redirecting in{" "}
+            <span className="font-bold text-accent">{timeRemaining}</span>{" "}
+            seconds
+          </p>
+        )}
       </div>
     </div>
   );

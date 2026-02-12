@@ -356,6 +356,58 @@ server.on("connection", (ws: ExtendedWebSocket) => {
       });
     }
 
+    if (parsedData.type === MESSAGE_TYPE.ROUND_SUMMARY) {
+      const { roomId, userId } = parsedData.data;
+
+      const room = rooms.find((rm) => rm.room.id === roomId);
+
+      if (!room) {
+        ws.send(
+          JSON.stringify({
+            type: MESSAGE_TYPE.MESSAGE,
+            data: {
+              message: "Room with the give Id not found",
+              from: "server",
+            },
+          }),
+        );
+        return;
+      }
+
+      const user = room.users.find((usr) => usr.id === userId);
+
+      if (!user) {
+        ws.send(
+          JSON.stringify({
+            type: MESSAGE_TYPE.MESSAGE,
+            data: {
+              message: "User with the give id not found",
+              from: "server",
+            },
+          }),
+        );
+        return;
+      }
+
+      if (room.room.total_round === 0) {
+        return;
+      }
+
+      const rightWord = rightWords.get(room.room.id);
+
+      room.users.forEach((usr) => {
+        usr.ws.send(
+          JSON.stringify({
+            type: parsedData.type,
+            data: {
+              room,
+              rightWord,
+            },
+          }),
+        );
+      });
+    }
+
     if (parsedData.type === MESSAGE_TYPE.CHOOSEN_WORD) {
       const { roomId, word, userId } = parsedData.data;
 

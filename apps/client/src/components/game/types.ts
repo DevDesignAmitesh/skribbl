@@ -5,6 +5,7 @@ export type ViewState =
   | "create-room"
   | "waiting"
   | "share-room"
+  | "round-summary"
   | "error"
   | "summary";
 
