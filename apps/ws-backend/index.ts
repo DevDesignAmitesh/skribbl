@@ -19,6 +19,21 @@ const generate = () => {
   return random_words[randomIndex]?.split(", ")!;
 };
 
+// for ratelimiting
+function throttle<T extends (...args: any) => any>(func: T, timeFrame: number) {
+  let lastTime = 0;
+
+  return function (...args: Parameters<T>) {
+    const now = Date.now();
+    if (now - lastTime >= timeFrame) {
+      func(...args);
+      lastTime = now;
+    }
+  };
+}
+
+const LIMIT = 200;
+
 // all rooms in memory
 let rooms: {
   room: Room;
@@ -49,567 +64,629 @@ server.on("connection", (ws: ExtendedWebSocket, req) => {
 
   console.log("connected");
 
-  ws.on("message", (data) => {
-    const parsedData = JSON.parse(data.toString());
-    console.log("received data ", parsedData);
+  ws.on("message", (data) => {});
 
-    if (parsedData.type === MESSAGE_TYPE.CREATE_ROOM) {
-      const {
-        players,
-        rounds,
-        draw_time,
-        language,
-        character,
-        userName,
-        id,
-        status,
-        userId,
-      } = parsedData.data;
+  ws.on(
+    "message",
+    throttle((data) => {
+      const parsedData = JSON.parse(data.toString());
+      console.log("received data ", parsedData);
 
-      const custom_word = generate();
-
-      const roomId = id;
-
-      // why?? because if we are using just a normal setinterval timer then it is based on
-      // the performance of client like number of tabs opened and etc...
-      const time_based_draw_time = Date.now() + draw_time * 1000;
-
-      ws.roomId = id;
-      ws.userId = userId;
-
-      rooms.push({
-        room: {
-          id: roomId,
+      if (parsedData.type === MESSAGE_TYPE.CREATE_ROOM) {
+        const {
           players,
           rounds,
           draw_time,
-          roundEndsAt: time_based_draw_time,
           language,
-          custom_word,
+          character,
+          userName,
+          id,
           status,
-          latest_round: 0,
-          total_round: 0,
-        },
-        users: [
-          {
-            id: userId,
-            name: userName,
-            character,
-            ws,
-            type: "admin",
-            status: "idol",
-            points: 0,
+          userId,
+        } = parsedData.data;
+
+        const custom_word = generate();
+
+        const roomId = id;
+
+        // why?? because if we are using just a normal setinterval timer then it is based on
+        // the performance of client like number of tabs opened and etc...
+        const time_based_draw_time = Date.now() + draw_time * 1000;
+
+        ws.roomId = id;
+        ws.userId = userId;
+
+        rooms.push({
+          room: {
+            id: roomId,
+            players,
+            rounds,
+            draw_time,
+            roundEndsAt: time_based_draw_time,
+            language,
+            custom_word,
+            status,
+            latest_round: 0,
+            total_round: 0,
           },
-        ],
-      });
-
-      const room = rooms.find((rm) => rm.room.id === roomId);
-
-      ws.send(
-        JSON.stringify({
-          type: parsedData.type,
-          data: {
-            room,
-          },
-        }),
-      );
-    }
-
-    if (parsedData.type === MESSAGE_TYPE.JOIN_ROOM) {
-      const { roomId, name, character, userId } = parsedData.data;
-
-      const room = rooms.find((rm) => rm.room.id === roomId);
-
-      if (!room) {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              message: "Room with the give Id not found",
-              from: "server",
+          users: [
+            {
+              id: userId,
+              name: userName,
+              character,
+              ws,
+              type: "admin",
+              status: "idol",
+              points: 0,
             },
-          }),
-        );
-        return;
-      }
+          ],
+        });
 
-      if (room.users.length === room.room.players) {
+        const room = rooms.find((rm) => rm.room.id === roomId);
+
         ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              message: "Room is already full",
-              from: "server",
-            },
-          }),
-        );
-        return;
-      }
-
-      if (room.room.status === "ended") {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              message: "Room already ended",
-              from: "server",
-            },
-          }),
-        );
-        return;
-      }
-
-      ws.userId = userId;
-      ws.roomId = roomId;
-
-      room.users.push({
-        id: userId,
-        name,
-        character,
-        type: "member",
-        status: "idol",
-        ws,
-        points: 0,
-      });
-
-      room.users.forEach((usr) =>
-        usr.ws.send(
           JSON.stringify({
             type: parsedData.type,
             data: {
               room,
             },
           }),
-        ),
-      );
-    }
+        );
+      }
 
-    if (parsedData.type === MESSAGE_TYPE.JOIN_RANDOM) {
-      const { name, character, language, userId } = parsedData.data;
+      if (parsedData.type === MESSAGE_TYPE.JOIN_ROOM) {
+        const { roomId, name, character, userId } = parsedData.data;
 
-      let finalRoom: {
-        room: Room;
-        users: User[];
-      }[] = [];
+        const room = rooms.find((rm) => rm.room.id === roomId);
 
-      // running the loop for finding available rooms
-      rooms.forEach((rm) => {
-        if (
-          rm.room.language === language &&
-          rm.users.length < rm.room.players &&
-          rm.room.status !== "ended"
-        ) {
-          finalRoom.push(rm);
+        if (!room) {
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.MESSAGE,
+              data: {
+                message: "Room with the give Id not found",
+                from: "server",
+              },
+            }),
+          );
+          return;
         }
-      });
 
-      // generating random index
-      const randomIndex = Math.floor(Math.random() * finalRoom.length)!;
+        if (room.users.length === room.room.players) {
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.MESSAGE,
+              data: {
+                message: "Room is already full",
+                from: "server",
+              },
+            }),
+          );
+          return;
+        }
 
-      // finding random room from the available rooms
-      const availableRoom = finalRoom[randomIndex];
+        if (room.room.status === "ended") {
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.MESSAGE,
+              data: {
+                message: "Room already ended",
+                from: "server",
+              },
+            }),
+          );
+          return;
+        }
 
-      if (!availableRoom) {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              message: "There are no available room at this moment",
-              from: "server",
-            },
-          }),
-        );
-        return;
-      }
+        ws.userId = userId;
+        ws.roomId = roomId;
 
-      ws.userId = userId;
-      ws.roomId = availableRoom.room.id;
+        room.users.push({
+          id: userId,
+          name,
+          character,
+          type: "member",
+          status: "idol",
+          ws,
+          points: 0,
+        });
 
-      availableRoom.users.push({
-        id: userId,
-        name,
-        character,
-        type: "member",
-        ws,
-        status: "idol",
-        points: 0,
-      });
-
-      availableRoom.users.forEach((usr) =>
-        usr.ws.send(
-          JSON.stringify({
-            type: parsedData.type,
-            data: {
-              room: availableRoom,
-            },
-          }),
-        ),
-      );
-    }
-
-    if (parsedData.type === MESSAGE_TYPE.START_GAME) {
-      const { roomId, userId } = parsedData.data;
-
-      const room = rooms.find((rm) => rm.room.id === roomId);
-
-      if (!room) {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              message: "Room with the give Id not found",
-              from: "server",
-            },
-          }),
-        );
-        return;
-      }
-
-      const user = room.users.find((usr) => usr.id === userId);
-
-      if (!user) {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              message: "User with the give id not found",
-              from: "server",
-            },
-          }),
-        );
-        return;
-      }
-
-      if (room.users.length === 1) {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              message: "you need atleast 2 players to start the game",
-              from: "server",
-            },
-          }),
-        );
-        return;
-      }
-
-      if (room.room.total_round === room.users.length * room.room.rounds) {
-        room.users.forEach((usr) => {
+        room.users.forEach((usr) =>
           usr.ws.send(
             JSON.stringify({
-              type: MESSAGE_TYPE.GAME_END,
+              type: parsedData.type,
               data: {
-                message: "game ends",
                 room,
+              },
+            }),
+          ),
+        );
+      }
+
+      if (parsedData.type === MESSAGE_TYPE.JOIN_RANDOM) {
+        const { name, character, language, userId } = parsedData.data;
+
+        let finalRoom: {
+          room: Room;
+          users: User[];
+        }[] = [];
+
+        // running the loop for finding available rooms
+        rooms.forEach((rm) => {
+          if (
+            rm.room.language === language &&
+            rm.users.length < rm.room.players &&
+            rm.room.status !== "ended"
+          ) {
+            finalRoom.push(rm);
+          }
+        });
+
+        // generating random index
+        const randomIndex = Math.floor(Math.random() * finalRoom.length)!;
+
+        // finding random room from the available rooms
+        const availableRoom = finalRoom[randomIndex];
+
+        if (!availableRoom) {
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.MESSAGE,
+              data: {
+                message: "There are no available room at this moment",
+                from: "server",
+              },
+            }),
+          );
+          return;
+        }
+
+        ws.userId = userId;
+        ws.roomId = availableRoom.room.id;
+
+        availableRoom.users.push({
+          id: userId,
+          name,
+          character,
+          type: "member",
+          ws,
+          status: "idol",
+          points: 0,
+        });
+
+        availableRoom.users.forEach((usr) =>
+          usr.ws.send(
+            JSON.stringify({
+              type: parsedData.type,
+              data: {
+                room: availableRoom,
+              },
+            }),
+          ),
+        );
+      }
+
+      if (parsedData.type === MESSAGE_TYPE.START_GAME) {
+        const { roomId, userId } = parsedData.data;
+
+        const room = rooms.find((rm) => rm.room.id === roomId);
+
+        if (!room) {
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.MESSAGE,
+              data: {
+                message: "Room with the give Id not found",
+                from: "server",
+              },
+            }),
+          );
+          return;
+        }
+
+        const user = room.users.find((usr) => usr.id === userId);
+
+        if (!user) {
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.MESSAGE,
+              data: {
+                message: "User with the give id not found",
+                from: "server",
+              },
+            }),
+          );
+          return;
+        }
+
+        if (room.users.length === 1) {
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.MESSAGE,
+              data: {
+                message: "you need atleast 2 players to start the game",
+                from: "server",
+              },
+            }),
+          );
+          return;
+        }
+
+        if (room.room.total_round === room.users.length * room.room.rounds) {
+          room.users.forEach((usr) => {
+            usr.ws.send(
+              JSON.stringify({
+                type: MESSAGE_TYPE.GAME_END,
+                data: {
+                  message: "game ends",
+                  room,
+                },
+              }),
+            );
+          });
+          rightWords.delete(room.room.id);
+          const filterdRooms = rooms.filter(
+            (rm) => rm.room.id !== room.room.id,
+          );
+          rooms = filterdRooms;
+          return;
+        }
+
+        const time_based_draw_time = Date.now() + room.room.draw_time * 1000;
+        room.room.roundEndsAt = time_based_draw_time;
+        room.room.startedAt = Date.now();
+        room.room.status = "ongoing";
+        room.room.total_round! += 1;
+        room.room.latest_round! = Math.floor(
+          room.room.total_round! / room.users.length,
+        );
+
+        const isAllUserDone = room.users.every((usr) => usr.turn === true);
+
+        if (isAllUserDone) {
+          room.users.forEach((usr) => {
+            usr.turn = false;
+          });
+        }
+
+        // const randomIndex = Math.floor(Math.random() * room.users.length)!;
+        // const chooser = room.users[randomIndex]!;
+
+        let chooser: User;
+
+        room.users.forEach((usr) => {
+          if (usr.turn === true) return;
+          chooser = usr;
+        });
+
+        chooser!.status = "chooser";
+        chooser!.turn = true;
+
+        const newUsers = room.users.filter((usr) => usr.id !== chooser!.id);
+
+        newUsers.forEach((usr) => {
+          usr.status = "guesser";
+        });
+
+        room.users = [...newUsers, chooser!];
+
+        chooser!.ws.send(
+          JSON.stringify({
+            type: MESSAGE_TYPE.YOU_ARE_CHOOSER,
+            data: {
+              room,
+              round: room.room.latest_round,
+            },
+          }),
+        );
+
+        newUsers.forEach((usr) => {
+          usr.ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.SOMEONE_CHOOSING,
+              data: {
+                room,
+                round: room.room.latest_round,
+                chooser: {
+                  name: chooser.name,
+                  character: chooser.character,
+                },
               },
             }),
           );
         });
-        rightWords.delete(room.room.id);
-        const filterdRooms = rooms.filter((rm) => rm.room.id !== room.room.id);
-        rooms = filterdRooms;
-        return;
       }
 
-      const time_based_draw_time = Date.now() + room.room.draw_time * 1000;
-      room.room.roundEndsAt = time_based_draw_time;
-      room.room.startedAt = Date.now();
-      room.room.status = "ongoing";
-      room.room.total_round! += 1;
-      room.room.latest_round! = Math.floor(
-        room.room.total_round! / room.users.length,
-      );
+      if (parsedData.type === MESSAGE_TYPE.ROUND_SUMMARY) {
+        const { roomId, userId } = parsedData.data;
 
-      const isAllUserDone = room.users.every((usr) => usr.turn === true);
+        const room = rooms.find((rm) => rm.room.id === roomId);
 
-      if (isAllUserDone) {
-        room.users.forEach((usr) => {
-          usr.turn = false;
-        });
-      }
-
-      // const randomIndex = Math.floor(Math.random() * room.users.length)!;
-      // const chooser = room.users[randomIndex]!;
-
-      let chooser: User;
-
-      room.users.forEach((usr) => {
-        if (usr.turn === true) return;
-        chooser = usr;
-      });
-
-      chooser!.status = "chooser";
-      chooser!.turn = true;
-
-      const newUsers = room.users.filter((usr) => usr.id !== chooser!.id);
-
-      newUsers.forEach((usr) => {
-        usr.status = "guesser";
-      });
-
-      room.users = [...newUsers, chooser!];
-
-      chooser!.ws.send(
-        JSON.stringify({
-          type: MESSAGE_TYPE.YOU_ARE_CHOOSER,
-          data: {
-            room,
-            round: room.room.latest_round,
-          },
-        }),
-      );
-
-      newUsers.forEach((usr) => {
-        usr.ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.SOMEONE_CHOOSING,
-            data: {
-              room,
-              round: room.room.latest_round,
-              chooser: {
-                name: chooser.name,
-                character: chooser.character,
+        if (!room) {
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.MESSAGE,
+              data: {
+                message: "Room with the give Id not found",
+                from: "server",
               },
-            },
-          }),
-        );
-      });
-    }
+            }),
+          );
+          return;
+        }
 
-    if (parsedData.type === MESSAGE_TYPE.ROUND_SUMMARY) {
-      const { roomId, userId } = parsedData.data;
+        const user = room.users.find((usr) => usr.id === userId);
 
-      const room = rooms.find((rm) => rm.room.id === roomId);
+        if (!user) {
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.MESSAGE,
+              data: {
+                message: "User with the give id not found",
+                from: "server",
+              },
+            }),
+          );
+          return;
+        }
 
-      if (!room) {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              message: "Room with the give Id not found",
-              from: "server",
-            },
-          }),
-        );
-        return;
-      }
+        if (room.room.total_round === 0) {
+          return;
+        }
 
-      const user = room.users.find((usr) => usr.id === userId);
+        const rightWord = rightWords.get(room.room.id);
 
-      if (!user) {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              message: "User with the give id not found",
-              from: "server",
-            },
-          }),
-        );
-        return;
-      }
-
-      if (room.room.total_round === 0) {
-        return;
-      }
-
-      const rightWord = rightWords.get(room.room.id);
-
-      room.users.forEach((usr) => {
-        usr.ws.send(
-          JSON.stringify({
-            type: parsedData.type,
-            data: {
-              room,
-              rightWord,
-            },
-          }),
-        );
-      });
-    }
-
-    if (parsedData.type === MESSAGE_TYPE.CHOOSEN_WORD) {
-      const { roomId, word, userId } = parsedData.data;
-
-      const room = rooms.find((rm) => rm.room.id === roomId);
-
-      if (!room) {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              message: "Room with the give Id not found",
-              from: "server",
-            },
-          }),
-        );
-        return;
-      }
-
-      const user = room.users.find((usr) => usr.id === userId);
-
-      if (!user) {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              message: "User with the give id not found",
-              from: "server",
-            },
-          }),
-        );
-        return;
-      }
-
-      if (user.status !== "chooser") {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              message: "You are not the chooser",
-              from: "server",
-            },
-          }),
-        );
-        return;
-      }
-
-      const right_word = word.trim().toLowerCase();
-
-      rightWords.set(room.room.id, right_word);
-
-      // word = 'taj mahal'
-
-      const splitedArr = right_word.split(" ");
-
-      // splitedArr = ["taj", "mahal"]
-
-      const totalLength: number[] = [];
-
-      for (let i = 0; i < splitedArr.length; i++) {
-        const element = splitedArr[i];
-        if (!element) continue;
-
-        totalLength.push(element.length);
-      }
-
-      // totalLength => we will map this on the frontend and render something like this
-      // --- -----
-
-      room.users.forEach((usr) => {
-        usr.ws.send(
-          JSON.stringify({
-            type: parsedData.type,
-            data: {
-              totalLength,
-              word: usr.ws === user.ws && right_word,
-            },
-          }),
-        );
-      });
-    }
-
-    if (parsedData.type === MESSAGE_TYPE.GUESS_WORD) {
-      const { roomId, userId, word } = parsedData.data;
-
-      const room = rooms.find((rm) => rm.room.id === roomId);
-
-      if (!room) {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              message: "room not found with the given id",
-              from: "server",
-            },
-          }),
-        );
-        return;
-      }
-
-      if (room.room.status === "creating" || room.room.status === "ended") {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              message: "room is ended or not started yet",
-              from: "server",
-            },
-          }),
-        );
-        return;
-      }
-
-      const user = room.users.find((usr) => usr.id === userId);
-
-      if (!user) {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              message: "user not found with the given id",
-              from: "server",
-            },
-          }),
-        );
-        return;
-      }
-
-      if (user.status === "chooser") {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              message: "chooser cannot guess word",
-              from: "server",
-            },
-          }),
-        );
-        return;
-      }
-
-      if (user.status === "idol") {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              message:
-                "you already guessed word or wait for new round to get started",
-              from: "server",
-            },
-          }),
-        );
-        return;
-      }
-
-      const right_word = rightWords.get(room.room.id);
-
-      if (word.trim().toLowerCase() !== right_word) {
-        const splitedRightWord = right_word?.trim().split("") as string[];
-        const splitedGuessedWord = word?.trim().split("") as string[];
-        let matches = 0;
-
-        splitedGuessedWord.forEach((chr: string, idx: number) => {
-          const rightChr = splitedRightWord[idx];
-          console.log("chr ", chr);
-          console.log("rightChr ", rightChr);
-
-          if (rightChr === chr) matches++;
+        room.users.forEach((usr) => {
+          usr.ws.send(
+            JSON.stringify({
+              type: parsedData.type,
+              data: {
+                room,
+                rightWord,
+              },
+            }),
+          );
         });
-        console.log("matches", matches);
-        console.log("right_word!.length / 2 ", right_word!.length / 2);
+      }
 
-        if (matches >= right_word!.length / 2) {
+      if (parsedData.type === MESSAGE_TYPE.CHOOSEN_WORD) {
+        const { roomId, word, userId } = parsedData.data;
+
+        const room = rooms.find((rm) => rm.room.id === roomId);
+
+        if (!room) {
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.MESSAGE,
+              data: {
+                message: "Room with the give Id not found",
+                from: "server",
+              },
+            }),
+          );
+          return;
+        }
+
+        const user = room.users.find((usr) => usr.id === userId);
+
+        if (!user) {
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.MESSAGE,
+              data: {
+                message: "User with the give id not found",
+                from: "server",
+              },
+            }),
+          );
+          return;
+        }
+
+        if (user.status !== "chooser") {
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.MESSAGE,
+              data: {
+                message: "You are not the chooser",
+                from: "server",
+              },
+            }),
+          );
+          return;
+        }
+
+        const right_word = word.trim().toLowerCase();
+
+        rightWords.set(room.room.id, right_word);
+
+        // word = 'taj mahal'
+
+        const splitedArr = right_word.split(" ");
+
+        // splitedArr = ["taj", "mahal"]
+
+        const totalLength: number[] = [];
+
+        for (let i = 0; i < splitedArr.length; i++) {
+          const element = splitedArr[i];
+          if (!element) continue;
+
+          totalLength.push(element.length);
+        }
+
+        // totalLength => we will map this on the frontend and render something like this
+        // --- -----
+
+        room.users.forEach((usr) => {
+          usr.ws.send(
+            JSON.stringify({
+              type: parsedData.type,
+              data: {
+                totalLength,
+                word: usr.ws === user.ws && right_word,
+              },
+            }),
+          );
+        });
+      }
+
+      if (parsedData.type === MESSAGE_TYPE.GUESS_WORD) {
+        const { roomId, userId, word } = parsedData.data;
+
+        const room = rooms.find((rm) => rm.room.id === roomId);
+
+        if (!room) {
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.MESSAGE,
+              data: {
+                message: "room not found with the given id",
+                from: "server",
+              },
+            }),
+          );
+          return;
+        }
+
+        if (room.room.status === "creating" || room.room.status === "ended") {
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.MESSAGE,
+              data: {
+                message: "room is ended or not started yet",
+                from: "server",
+              },
+            }),
+          );
+          return;
+        }
+
+        const user = room.users.find((usr) => usr.id === userId);
+
+        if (!user) {
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.MESSAGE,
+              data: {
+                message: "user not found with the given id",
+                from: "server",
+              },
+            }),
+          );
+          return;
+        }
+
+        if (user.status === "chooser") {
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.MESSAGE,
+              data: {
+                message: "chooser cannot guess word",
+                from: "server",
+              },
+            }),
+          );
+          return;
+        }
+
+        if (user.status === "idol") {
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.MESSAGE,
+              data: {
+                message:
+                  "you already guessed word or wait for new round to get started",
+                from: "server",
+              },
+            }),
+          );
+          return;
+        }
+
+        const right_word = rightWords.get(room.room.id);
+
+        if (word.trim().toLowerCase() !== right_word) {
+          const splitedRightWord = right_word?.trim().split("") as string[];
+          const splitedGuessedWord = word?.trim().split("") as string[];
+          let matches = 0;
+
+          splitedGuessedWord.forEach((chr: string, idx: number) => {
+            const rightChr = splitedRightWord[idx];
+            console.log("chr ", chr);
+            console.log("rightChr ", rightChr);
+
+            if (rightChr === chr) matches++;
+          });
+          console.log("matches", matches);
+          console.log("right_word!.length / 2 ", right_word!.length / 2);
+
+          if (matches >= right_word!.length / 2) {
+            const filterdUser = room.users.filter((usr) => usr.id !== user.id);
+            room.users = [...filterdUser, user];
+
+            filterdUser.forEach((usr) => {
+              usr.ws.send(
+                JSON.stringify({
+                  type: MESSAGE_TYPE.MESSAGE,
+                  data: {
+                    message: word,
+                    from: usr.ws === ws ? "You" : user.name,
+                  },
+                }),
+              );
+            });
+
+            user.ws.send(
+              JSON.stringify({
+                type: MESSAGE_TYPE.MESSAGE,
+                data: {
+                  message: "The guessed word was too close",
+                  from: user.name,
+                },
+              }),
+            );
+          } else {
+            room.users.forEach((usr) => {
+              usr.ws.send(
+                JSON.stringify({
+                  type: MESSAGE_TYPE.MESSAGE,
+                  data: {
+                    message: word,
+                    from: usr.ws === ws ? "You" : user.name,
+                  },
+                }),
+              );
+            });
+          }
+
+          return;
+        }
+
+        if (word.trim().toLowerCase() === right_word) {
+          const submitedAt = Date.now();
+          const diff = submitedAt - room.room.startedAt!;
+
+          if (diff <= 30000) {
+            user.points += 200;
+          } else if (diff <= 10000) {
+            user.points += 150;
+          } else {
+            user.points += 50;
+          }
+
+          user.status = "idol";
+
           const filterdUser = room.users.filter((usr) => usr.id !== user.id);
           room.users = [...filterdUser, user];
 
-          filterdUser.forEach((usr) => {
+          room.users.forEach((usr) => {
             usr.ws.send(
               JSON.stringify({
                 type: MESSAGE_TYPE.MESSAGE,
                 data: {
-                  message: word,
-                  from: usr.ws === ws ? "You" : user.name,
+                  message: `${usr.ws === ws ? "You" : user.name} guessed the right word`,
+                  from: "server",
+                  room,
                 },
               }),
             );
@@ -617,243 +694,188 @@ server.on("connection", (ws: ExtendedWebSocket, req) => {
 
           user.ws.send(
             JSON.stringify({
-              type: MESSAGE_TYPE.MESSAGE,
+              type: MESSAGE_TYPE.RIGHT_WORD,
               data: {
-                message: "The guessed word was too close",
-                from: user.name,
+                word: right_word,
               },
             }),
           );
-        } else {
-          room.users.forEach((usr) => {
-            usr.ws.send(
-              JSON.stringify({
-                type: MESSAGE_TYPE.MESSAGE,
-                data: {
-                  message: word,
-                  from: usr.ws === ws ? "You" : user.name,
-                },
-              }),
-            );
+        }
+
+        // here we are checking if every user is idol except the chooser then
+        // starting the next round
+        let idolUser: number = 0;
+
+        room.users.forEach((usr) => {
+          if (usr.status === "idol") idolUser += 1;
+        });
+
+        console.log("idolUser ", idolUser);
+
+        if (idolUser === room.users.length - 1) {
+          const admin = room.users.find((usr) => usr.type === "admin");
+          admin?.ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.ANOTHER_ONE,
+            }),
+          );
+        }
+      }
+
+      if (parsedData.type === MESSAGE_TYPE.HALF_TIME) {
+        const { roomId, userId } = parsedData.data;
+
+        const room = rooms.find((rm) => rm.room.id === roomId);
+
+        if (!room) {
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.MESSAGE,
+              data: {
+                message: "Room not found with the given Id",
+                from: "server",
+              },
+            }),
+          );
+          return;
+        }
+
+        const user = room.users.find((usr) => usr.id === userId);
+
+        if (!user) {
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.MESSAGE,
+              data: {
+                message: "User not found with the given Id",
+                from: "server",
+              },
+            }),
+          );
+          return;
+        }
+
+        if (user.status !== "guesser") {
+          return;
+        }
+
+        const right_word = rightWords.get(room.room.id);
+
+        const wordLength = right_word!.length;
+        const wordsToSend = Math.floor(wordLength / 2);
+        let halfWord: HalfWord[] = [];
+
+        for (let i = 1; i <= wordsToSend; i++) {
+          console.log("loop is running");
+          const elm = right_word![i]!;
+          halfWord.push({
+            elm,
+            idx: i,
           });
         }
 
-        return;
+        console.log("halfWord ", halfWord);
+
+        user.ws.send(
+          JSON.stringify({
+            type: MESSAGE_TYPE.HALF_WORD,
+            data: {
+              halfWord,
+            },
+          }),
+        );
       }
 
-      if (word.trim().toLowerCase() === right_word) {
-        const submitedAt = Date.now();
-        const diff = submitedAt - room.room.startedAt!;
+      if (parsedData.type === MESSAGE_TYPE.DRAWING) {
+        const { roomId, userId, payload } = parsedData.data;
 
-        if (diff <= 30000) {
-          user.points += 200;
-        } else if (diff <= 10000) {
-          user.points += 150;
-        } else {
-          user.points += 50;
+        const room = rooms.find((rm) => rm.room.id === roomId);
+
+        if (!room) {
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.MESSAGE,
+              data: {
+                from: "server",
+                message: "room not found with the given Id",
+              },
+            }),
+          );
+          return;
         }
 
-        user.status = "idol";
+        const user = room.users.find((usr) => usr.id === userId);
 
-        const filterdUser = room.users.filter((usr) => usr.id !== user.id);
-        room.users = [...filterdUser, user];
+        if (!user) {
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.MESSAGE,
+              data: {
+                from: "server",
+                message: "user not found with the given id",
+              },
+            }),
+          );
+          return;
+        }
+
+        const filterdUsers = room.users.filter((usr) => usr.id !== user.id);
+
+        filterdUsers.forEach((usr) => {
+          usr.ws.send(
+            JSON.stringify({
+              type: parsedData.type,
+              data: {
+                payload,
+              },
+            }),
+          );
+        });
+      }
+
+      if (parsedData.type === MESSAGE_TYPE.CLEAR_CANVAS) {
+        const { roomId, userId } = parsedData.data;
+
+        const room = rooms.find((rm) => rm.room.id === roomId);
+
+        if (!room) {
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.MESSAGE,
+              data: {
+                from: "server",
+                message: "room not found with the given Id",
+              },
+            }),
+          );
+          return;
+        }
+
+        const user = room.users.find((usr) => usr.id === userId);
+
+        if (!user) {
+          ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.MESSAGE,
+              data: {
+                from: "server",
+                message: "user not found with the given id",
+              },
+            }),
+          );
+          return;
+        }
 
         room.users.forEach((usr) => {
           usr.ws.send(
             JSON.stringify({
-              type: MESSAGE_TYPE.MESSAGE,
-              data: {
-                message: `${usr.ws === ws ? "You" : user.name} guessed the right word`,
-                from: "server",
-                room,
-              },
+              type: parsedData.type,
             }),
           );
         });
-
-        user.ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.RIGHT_WORD,
-            data: {
-              word: right_word,
-            },
-          }),
-        );
       }
-
-      // here we are checking if every user is idol except the chooser then
-      // starting the next round
-      let idolUser: number = 0;
-
-      room.users.forEach((usr) => {
-        if (usr.status === "idol") idolUser += 1;
-      });
-
-      console.log("idolUser ", idolUser);
-
-      if (idolUser === room.users.length - 1) {
-        const admin = room.users.find((usr) => usr.type === "admin");
-        admin?.ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.ANOTHER_ONE,
-          }),
-        );
-      }
-    }
-
-    if (parsedData.type === MESSAGE_TYPE.HALF_TIME) {
-      const { roomId, userId } = parsedData.data;
-
-      const room = rooms.find((rm) => rm.room.id === roomId);
-
-      if (!room) {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              message: "Room not found with the given Id",
-              from: "server",
-            },
-          }),
-        );
-        return;
-      }
-
-      const user = room.users.find((usr) => usr.id === userId);
-
-      if (!user) {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              message: "User not found with the given Id",
-              from: "server",
-            },
-          }),
-        );
-        return;
-      }
-
-      if (user.status !== "guesser") {
-        return;
-      }
-
-      const right_word = rightWords.get(room.room.id);
-
-      const wordLength = right_word!.length;
-      const wordsToSend = Math.floor(wordLength / 2);
-      let halfWord: HalfWord[] = [];
-
-      for (let i = 1; i <= wordsToSend; i++) {
-        console.log("loop is running");
-        const elm = right_word![i]!;
-        halfWord.push({
-          elm,
-          idx: i,
-        });
-      }
-
-      console.log("halfWord ", halfWord);
-
-      user.ws.send(
-        JSON.stringify({
-          type: MESSAGE_TYPE.HALF_WORD,
-          data: {
-            halfWord,
-          },
-        }),
-      );
-    }
-
-    if (parsedData.type === MESSAGE_TYPE.DRAWING) {
-      const { roomId, userId, payload } = parsedData.data;
-
-      const room = rooms.find((rm) => rm.room.id === roomId);
-
-      if (!room) {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              from: "server",
-              message: "room not found with the given Id",
-            },
-          }),
-        );
-        return;
-      }
-
-      const user = room.users.find((usr) => usr.id === userId);
-
-      if (!user) {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              from: "server",
-              message: "user not found with the given id",
-            },
-          }),
-        );
-        return;
-      }
-
-      const filterdUsers = room.users.filter((usr) => usr.id !== user.id);
-
-      filterdUsers.forEach((usr) => {
-        usr.ws.send(
-          JSON.stringify({
-            type: parsedData.type,
-            data: {
-              payload,
-            },
-          }),
-        );
-      });
-    }
-
-    if (parsedData.type === MESSAGE_TYPE.CLEAR_CANVAS) {
-      const { roomId, userId } = parsedData.data;
-
-      const room = rooms.find((rm) => rm.room.id === roomId);
-
-      if (!room) {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              from: "server",
-              message: "room not found with the given Id",
-            },
-          }),
-        );
-        return;
-      }
-
-      const user = room.users.find((usr) => usr.id === userId);
-
-      if (!user) {
-        ws.send(
-          JSON.stringify({
-            type: MESSAGE_TYPE.MESSAGE,
-            data: {
-              from: "server",
-              message: "user not found with the given id",
-            },
-          }),
-        );
-        return;
-      }
-
-      room.users.forEach((usr) => {
-        usr.ws.send(
-          JSON.stringify({
-            type: parsedData.type,
-          }),
-        );
-      });
-    }
-  });
+    }, LIMIT),
+  );
 
   ws.on("close", () => {
     console.log("left");
