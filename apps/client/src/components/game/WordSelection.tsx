@@ -1,5 +1,3 @@
-// TODO: make sure that random words are not repeating itself...
-
 import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
 import Sound from "react-sound";
