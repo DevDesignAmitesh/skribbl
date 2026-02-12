@@ -21,7 +21,9 @@ interface WsContextProps {
     language: string,
   ) => void;
   handleCreateRoom: (room: Room) => void;
-  gameStarting: boolean
+  gameStarting: boolean;
+  roomJoin: boolean;
+  roomLeft: boolean;
   handleStartRoom: () => void;
   clearCanvas: () => void;
   handleHalfTime: () => void;
@@ -40,6 +42,8 @@ export const WsContextProvider = ({
   const [ws, setWs] = useState<WebSocket | null>(null);
   const roomIdRef = useRef<string | null>(null);
   const [gameStarting, setGameStarting] = useState<boolean>(false);
+  const [roomJoin, setRoomJoin] = useState<boolean>(false);
+  const [roomLeft, setRoomLeft] = useState<boolean>(false);
 
   const {
     handleSetView,
@@ -84,6 +88,10 @@ export const WsContextProvider = ({
         const { room } = parsedData.data as {
           room: { room: Room; users: User[] };
         };
+        setRoomJoin(true);
+        setTimeout(() => {
+          setRoomJoin(false);
+        }, 2000);
         setRoom(room);
         const user = room.users.find((usr: User) => usr.id === player.id);
         if (!user) return;
@@ -224,6 +232,11 @@ export const WsContextProvider = ({
 
       if (parsedData.type === MESSAGE_TYPE.LEFT) {
         const { message, room, from } = parsedData.data;
+        setRoomLeft(true);
+        setTimeout(() => {
+          setRoomLeft(false);
+        }, 2000);
+        
         setMessages((prev) => [
           ...prev,
           {
@@ -383,7 +396,7 @@ export const WsContextProvider = ({
           },
         }),
       );
-    setGameStarting(false);
+      setGameStarting(false);
     }, 3000);
   };
 
@@ -526,6 +539,8 @@ export const WsContextProvider = ({
         handleHalfTime,
         clearCanvas,
         gameStarting,
+        roomJoin,
+        roomLeft,
       }}
     >
       {children}
