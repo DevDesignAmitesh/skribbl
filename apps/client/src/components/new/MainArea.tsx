@@ -19,7 +19,7 @@ export const MainArea = () => {
 
   return (
     <div
-      className="w-full grid gap-2 mt-2
+      className="w-full h-auto grid gap-2 md:mt-2 mt-4
       grid-rows-[auto_auto]
       lg:grid-rows-none lg:grid-cols-[2fr_7fr_3fr]"
     >
@@ -31,9 +31,9 @@ export const MainArea = () => {
             onSelectWord={sendGuessedWord}
           />
         ) : chooseType === "choosing" ? (
-          <div className="w-full h-full bg-black/70 backdrop-blur-sm flex items-center justify-center">
-            <div className="flex flex-col items-center gap-6 text-white text-center">
-              <p className="text-2xl md:text-3xl font-semibold">
+          <div className="w-full h-full bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 md:p-0">
+            <div className="flex flex-col items-center md:gap-6 gap-3 text-white text-center">
+              <p className="text-xl md:text-3xl font-semibold">
                 {chooser?.name} is choosing a word...
               </p>
 
@@ -42,7 +42,7 @@ export const MainArea = () => {
                 alt="chooser avatar"
                 width={120}
                 height={120}
-                className="w-28 md:w-32 h-auto"
+                className="w-20 md:w-32 h-auto"
                 loading="eager"
               />
             </div>
@@ -73,10 +73,10 @@ export const MainArea = () => {
 
       {/* Bottom row on small */}
       <div className="grid grid-cols-2 gap-2 row-start-2 lg:contents">
-        <div className="h-96 overflow-y-auto">
+        <div className="md:h-96 h-72 overflow-y-auto">
           <LivePlayers />
         </div>
-        <div className="h-96 overflow-y-auto">
+        <div className="md:h-96 h-72 overflow-y-auto">
           <ChatPanel
             messages={messages}
             onSendMessage={handleSendMessage}

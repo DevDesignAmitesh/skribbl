@@ -22,7 +22,7 @@ export const RoomArea = () => {
 
   return (
     <div className="w-full h-full bg-[#35394A] text-neutral-100 p-2 flex flex-col justify-start items-center">
-      <div className="w-full h-full flex flex-col justify-between items-center">
+      <div className="w-full h-full flex flex-col justify-between items-center gap-4">
         <div className="w-full grid gap-2">
           {/* players */}
           <div className="w-full flex justify-between items-center gap-4">
@@ -69,7 +69,10 @@ export const RoomArea = () => {
               <p className="text-sm">Languages</p>
             </div>
 
-            <Select value={language} onValueChange={setLanguage}>
+            <Select
+              value={language}
+              // onValueChange={setLanguage}
+            >
               <SelectTrigger className="bg-white text-neutral-900 w-[60%]">
                 <SelectValue />
               </SelectTrigger>

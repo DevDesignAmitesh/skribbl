@@ -73,11 +73,11 @@ export const GameSummary = ({
 
       <div className="rounded-2xl p-8 max-w-md w-full">
         {rightWord ? (
-          <div className="text-2xl font-mono tracking-[0.3em] text-accent text-center mb-4">
+          <div className="md:text-2xl text-xl font-mono tracking-[0.3em] text-accent text-center mb-4">
             Right word was "{rightWord}"
           </div>
         ) : (
-          <h1 className="text-2xl font-bold text-accent text-center mb-6">
+          <h1 className="md:text-2xl text-xl font-bold text-accent text-center mb-6">
             🎉 Game Ends 🎉
           </h1>
         )}

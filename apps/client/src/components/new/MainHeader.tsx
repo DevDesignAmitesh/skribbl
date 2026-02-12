@@ -59,9 +59,11 @@ export const MainHeader = () => {
 
   return (
     <>
-      <header className="w-full flex flex-col justify-center items-start gap-2 text-neutral-800">
+      <header className="w-full flex flex-col justify-center md:items-start items-center md:gap-2 gap-4 text-neutral-800">
         <Logo width="w-xs" />
-        <div className="w-full flex justify-between items-center bg-white pr-2">
+        <div
+          className={`w-full ${room.room?.status === "ongoing" ? "flex" : "hidden"} justify-between items-center bg-white pr-2`}
+        >
           {/* timer and round */}
           <div className="flex items-center gap-4">
             <div className="relative flex items-center justify-center">
@@ -86,14 +88,18 @@ export const MainHeader = () => {
               </span>
             </div>
 
-            <p className="text-xl font-semibold">
-              Round {room.room?.latest_round} of {room.room?.rounds}
-            </p>
+            {room.room?.status === "ongoing" && (
+              <p className="md:text-xl text-lg font-semibold">
+                Round {room.room?.latest_round} of {room.room?.rounds}
+              </p>
+            )}
           </div>
 
           {/* game header */}
           {room.room?.status === "creating" ? (
-            <p className="text-sm font-bold text-neutral-700">WAITING</p>
+            <p className="md:text-sm text-xs font-bold text-neutral-700">
+              WAITING
+            </p>
           ) : (
             <div className="rounded-lg flex items-center py-1 justify-center">
               {/* Hidden Word - Center */}
@@ -118,7 +124,7 @@ export const MainHeader = () => {
             alt="logo"
             width={70}
             height={70}
-            className="w-auto h-auto"
+            className="w-auto h-auto md:block hidden"
             loading="eager"
           />
         </div>

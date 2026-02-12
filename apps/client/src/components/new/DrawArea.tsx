@@ -52,7 +52,7 @@ export const DrawArea = () => {
       />
       {/* Toolbar */}
       {isChooser && (
-        <div className="p-3 flex w-full items-center justify-between flex-wrap">
+        <div className="p-3 flex w-full items-center justify-between flex-wrap md:gap-0 gap-4">
           {/* Tools */}
           <div className="flex gap-1">
             <Button

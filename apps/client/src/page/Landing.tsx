@@ -49,7 +49,7 @@ export default function Landing({ roomId }: { roomId: string | null }) {
     localStorage.setItem("character", String(character));
   }, [name, character]);
   return (
-    <div className="h-auto w-full bg-[url(/landing-bg.png)]">
+    <div className="h-auto w-full bg-[url(/landing-bg.png)] px-4">
       {/* section one */}
       <div className="w-full py-4 flex flex-col gap-10 justify-center items-center">
         {/* header */}
@@ -67,7 +67,10 @@ export default function Landing({ roomId }: { roomId: string | null }) {
               maxLength={20}
               className="bg-white text-neutral-900 font-semibold"
             />
-            <Select value={lng} onValueChange={(v) => setLng(v)}>
+            <Select
+              value={lng}
+              // onValueChange={(v) => setLng(v)}
+            >
               <SelectTrigger className="bg-white w-[50%]">
                 <SelectValue />
               </SelectTrigger>

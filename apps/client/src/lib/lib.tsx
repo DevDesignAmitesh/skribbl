@@ -30,10 +30,11 @@ export const characters: Record<number, string> = {
 
 export const languages = [
   { value: "en", label: "English" },
-  { value: "es", label: "Spanish" },
-  { value: "fr", label: "French" },
-  { value: "de", label: "German" },
-  { value: "pt", label: "Portuguese" },
+  { value: "nan", label: "Coming soon.." },
+  // { value: "es", label: "Spanish" },
+  // { value: "fr", label: "French" },
+  // { value: "de", label: "German" },
+  // { value: "pt", label: "Portuguese" },
 ];
 
 export const getContext = (

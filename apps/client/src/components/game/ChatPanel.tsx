@@ -45,6 +45,7 @@ export const ChatPanel = ({
         </div>
         <div className="border-t border-border">
           <Input
+            className="text-sm"
             placeholder="Type your guess..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}

@@ -36,12 +36,16 @@ export const LandingHowToPlay = () => {
   const [step, setStep] = useState<number>(1);
 
   useEffect(() => {
-    setInterval(() => {
+    const interval = setInterval(() => {
       setStep((prev) => {
         if (prev === MAX_STEP) return 1;
         return prev + 1;
       });
     }, 1500);
+
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
   const recentStep = stepData[step];
@@ -66,12 +70,17 @@ export const LandingHowToPlay = () => {
           {[1, 2, 3, 4, 5].map((val) => {
             if (val === step) {
               return (
-                <p key={val} className="h-3 w-3 rounded-full bg-neutral-100" />
+                <p
+                  onClick={() => setStep(val)}
+                  key={val}
+                  className="h-3 w-3 rounded-full bg-neutral-100"
+                />
               );
             }
 
             return (
               <p
+                onClick={() => setStep(val)}
                 key={val}
                 className="h-3 w-3 rounded-full border border-neutral-100"
               />

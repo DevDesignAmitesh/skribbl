@@ -47,26 +47,25 @@ export const WordSelection = ({ words, onSelectWord }: WordSelectionProps) => {
   return (
     <>
       <div className="w-full h-full bg-black/80 backdrop-blur-sm flex items-center justify-center">
-        <div className="w-full h-full flex flex-col items-center justify-center text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-accent mb-3">
+        <div className="w-full h-full flex flex-col items-center justify-center text-center md:p-0 p-2">
+          <h2 className="text-xl md:text-4xl font-bold text-accent md:mb-3 mb-1">
             Choose a Word
           </h2>
 
-          <p className="text-accent mb-10 text-lg">
+          <p className="text-accent md:mb-10 mb-4 md:text-lg text-sm">
             Select one word to draw
           </p>
 
-          <div className="flex flex-col md:flex-row gap-6">
+          <div className="flex flex-col md:flex-row md:gap-6 gap-3">
             {randomWords.map((word, index) => (
               <button
                 key={index}
                 onClick={() => handleSelectWord(word)}
                 className={cn(
-                  "w-40 h-20 rounded-xl border-2 flex items-center justify-center",
-                  "text-lg font-semibold transition-all duration-200",
+                  "md:w-40 w-20 md:h-20 h-10 rounded-xl border-2 flex items-center justify-center",
+                  "md:text-lg text-sm font-semibold transition-all duration-200",
                   "bg-background hover:bg-accent",
-                  "hover:border-primary hover:scale-105 hover:shadow-2xl",
-                  "active:scale-95",
+                  "hover:scale-105",
                 )}
               >
                 {word}
@@ -74,9 +73,9 @@ export const WordSelection = ({ words, onSelectWord }: WordSelectionProps) => {
             ))}
           </div>
 
-          <p className="text-base text-accent-foreground mt-10">
+          <p className="md:text-base text-sm text-accent-foreground md:mt-10 mt-5">
             Auto-selects in{" "}
-            <span className="text-accent font-bold text-lg">
+            <span className="text-accent font-bold md:text-lg text-base">
               {timeleft}s
             </span>{" "}
             if no choice is made
