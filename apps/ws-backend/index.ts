@@ -14,21 +14,41 @@ interface ExtendedWebSocket extends WebSocket {
 
 const server = new WebSocketServer({ port: Number(process.env.PORT) });
 
-let rooms: {
-  room: Room;
-  users: User[];
-}[] = [];
-
 const generate = () => {
   const randomIndex = Math.floor(Math.random() * random_words.length);
   return random_words[randomIndex]?.split(", ")!;
 };
 
+// all rooms in memory
+let rooms: {
+  room: Room;
+  users: User[];
+}[] = [];
+
 // roomId and right_word
 let rightWords: Map<string, string> = new Map();
 
-server.on("connection", (ws: ExtendedWebSocket) => {
+// Define allowed origins
+const allowedOrigins = ["http://localhost:3000", "https://notskribbl.xyz"];
+
+server.on("connection", (ws: ExtendedWebSocket, req) => {
+  const origin = req.headers.origin;
+
+  console.log("origin ", origin); // your frontend url
+
+  if (!origin) {
+    ws.close();
+    return;
+  }
+
+  if (!allowedOrigins.includes(origin)) {
+    console.log(`Connection denied from origin: ${origin}`);
+    ws.close(1008, "Unauthorized"); // Close with a policy violation code
+    return;
+  }
+
   console.log("connected");
+
   ws.on("message", (data) => {
     const parsedData = JSON.parse(data.toString());
     console.log("received data ", parsedData);
@@ -836,6 +856,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
   });
 
   ws.on("close", () => {
+    console.log("left");
     // TODO: lets see if this works
     if (rooms.length !== 0) {
       // if user left, we will find the room
