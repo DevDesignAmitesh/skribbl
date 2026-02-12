@@ -99,7 +99,13 @@ export default function Landing({ roomId }: { roomId: string | null }) {
           <div className="flex flex-col justify-center items-center gap-2 w-full mt-4">
             <GreenButton
               label="Play !"
-              onClick={() => handleRoomJoin(roomId, name, character, lng)}
+              onClick={() => {
+                if (!name.trim()) {
+                  toast.error("Add your name");
+                  return;
+                }
+                handleRoomJoin(roomId, name, character, lng);
+              }}
             />
             <BlueButton
               label="Create private room"

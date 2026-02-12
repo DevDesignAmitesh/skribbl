@@ -454,7 +454,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         return;
       }
 
-      const right_word = word.trim();
+      const right_word = word.trim().toLowerCase();
 
       rightWords.set(room.room.id, right_word);
 
@@ -564,7 +564,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
 
       const right_word = rightWords.get(room.room.id);
 
-      if (word.trim() !== right_word) {
+      if (word.trim().toLowerCase() !== right_word) {
         const splitedRightWord = right_word?.trim().split("") as string[];
         const splitedGuessedWord = word?.trim().split("") as string[];
         let matches = 0;
@@ -621,7 +621,7 @@ server.on("connection", (ws: ExtendedWebSocket) => {
         return;
       }
 
-      if (word.trim() === right_word) {
+      if (word.trim().toLowerCase() === right_word) {
         const submitedAt = Date.now();
         const diff = submitedAt - room.room.startedAt!;
 
