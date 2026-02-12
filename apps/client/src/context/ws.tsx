@@ -29,7 +29,7 @@ interface WsContextProps {
   handleHalfTime: () => void;
   sendGuessedWord: (word: string) => void;
   handleSendMessage: (message: string) => void;
-  draw: (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => void;
+  draw: (e: React.PointerEvent<HTMLCanvasElement>) => void;
 }
 
 const WsContext = createContext<WsContextProps | null>(null);
@@ -443,7 +443,7 @@ export const WsContextProvider = ({
     );
   };
 
-  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const draw = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!isDrawing || !lastPosRef.current) return;
     if (!ws) return;
 

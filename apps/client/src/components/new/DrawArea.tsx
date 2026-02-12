@@ -44,11 +44,11 @@ export const DrawArea = () => {
     <div className="w-full h-full flex flex-col">
       <canvas
         ref={canvasRef}
-        className={`${isChooser ? "cursor-crosshair" : "cursor-not-allowed"} w-full h-full`}
-        onMouseDown={isChooser ? startDrawing : () => {}}
-        onMouseMove={isChooser ? draw : () => {}}
-        onMouseUp={isChooser ? stopDrawing : () => {}}
-        onMouseLeave={isChooser ? stopDrawing : () => {}}
+        className={`${isChooser ? "cursor-crosshair" : "cursor-not-allowed"} w-full h-full touch-none`}
+        onPointerDown={isChooser ? startDrawing : () => {}}
+        onPointerMove={isChooser ? draw : () => {}}
+        onPointerUp={isChooser ? stopDrawing : () => {}}
+        onPointerLeave={isChooser ? stopDrawing : () => {}}
       />
       {/* Toolbar */}
       {isChooser && (
