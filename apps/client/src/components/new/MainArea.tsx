@@ -65,7 +65,7 @@ export const MainArea = () => {
             {!rightWord && <Sound url="/gameover.mp3" playStatus="PLAYING" />}
           </>
         ) : view === "waiting" && isMember ? (
-          <div className="bg-card text-muted-foreground rounded-lg h-full w-full flex justify-center items-center">
+          <div className="bg-card text-muted-foreground rounded-lg md:h-full h-60 w-full flex justify-center items-center">
             waiting for the admin to start the game
           </div>
         ) : (

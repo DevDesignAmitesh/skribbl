@@ -4,10 +4,10 @@ export const Footer = () => {
   return (
     <footer className="text-neutral-100 w-full flex flex-col justify-center items-center gap-2 mt-16 text-sm">
       <p>
-        Build with 💖 by{" "}
+        Build by{" "}
         <span className="font-semibold underline hover:opacity-90">
           <Link href={"https://amitesh.work/"} target="_blank">
-            Amitesh
+            me
           </Link>
         </span>
       </p>
@@ -15,7 +15,7 @@ export const Footer = () => {
         Credits to {" "}
         <span className="font-semibold underline hover:opacity-90">
           <Link href={"https://skribbl.io/"} target="_blank">
-            Skribbl
+            real one 
           </Link>
         </span>
       </p>

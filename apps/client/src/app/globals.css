@@ -253,3 +253,15 @@ All colors MUST be HSL.
   animation-timing-function: linear;
   animation-fill-mode: forwards;
 }
+
+.bordered-text {
+  text-shadow:
+    5px 0 #000,
+    -5px 0 #000,
+    0 5px #000,
+    0 -5px #000,
+    1px 1px #000,
+    -1px -1px #000,
+    1px -1px #000,
+    -1px 1px #000;
+}

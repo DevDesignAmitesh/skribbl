@@ -82,31 +82,44 @@ export const GameSummary = ({
           </h1>
         )}
 
-        <div className="bg-muted rounded-xl p-4 space-y-3">
+        <div className="bg-muted rounded-xl md:p-3 p-2 md:space-y-2 space-y-1">
           {sortedPlayers.map((player, index) => (
             <div
               key={player.id}
-              className={`flex items-center gap-3 p-3 rounded-lg border ${
+              className={`flex items-center md:gap-2 gap-1 md:p-2 p-1 rounded-md ${
                 index === 0
-                  ? "bg-yellow-50 border-yellow-300"
-                  : "bg-card border-border"
+                  ? "bg-yellow-50 border border-yellow-300"
+                  : "bg-card"
               }`}
             >
-              <div className="flex items-center justify-center w-6">
-                {getRankIcon(index + 1)}
+              {/* Rank - smaller, only show top 3 icons */}
+              <div className="flex items-center justify-center w-4">
+                {index < 3 ? (
+                  getRankIcon(index + 1)
+                ) : (
+                  <span className="text-xs text-muted-foreground">
+                    {index + 1}
+                  </span>
+                )}
               </div>
+
+              {/* Avatar - smaller */}
               <Image
                 src={characters[player.character]}
                 alt="avatar"
-                width={24}
-                height={24}
-                className="w-auto h-auto"
+                width={20}
+                height={20}
+                className="md:w-5 w-4 h-auto shrink-0"
                 loading="eager"
               />
-              <span className="flex-1 text-sm font-medium text-primary truncate">
+
+              {/* Name - more truncation */}
+              <span className="flex-1 text-xs font-medium text-primary truncate min-w-0">
                 {player.name}
               </span>
-              <span className="text-sm font-bold text-primary">
+
+              {/* Points - smaller */}
+              <span className="text-xs font-bold text-primary shrink-0">
                 {player.points}
               </span>
             </div>
@@ -114,7 +127,7 @@ export const GameSummary = ({
         </div>
 
         {!rightWord && (
-          <p className="text-center text-accent mt-6 text-sm">
+          <p className="text-center text-accent md:mt-6 mt-3 md:text-sm text-xs">
             Redirecting in{" "}
             <span className="font-bold text-accent">{timeRemaining}</span>{" "}
             seconds

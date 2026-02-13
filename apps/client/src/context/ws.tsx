@@ -108,6 +108,13 @@ export const WsContextProvider = ({
         setRoom(room);
         const user = room.users.find((usr: User) => usr.id === player.id);
         if (!user) return;
+
+        setPlayer((prev) => ({
+          ...prev,
+          status: user.status,
+          type: user.type,
+        }));
+
         if (user.type === "admin") return;
 
         if (room.room.status === "creating") {
@@ -115,15 +122,8 @@ export const WsContextProvider = ({
         } else if (room.room.status === "ongoing") {
           handleSetView("share-room");
         } else if (room.room.status === "ended") {
-          alert("room ended");
           window.location.reload();
         }
-
-        setPlayer((prev) => ({
-          ...prev,
-          status: user.status,
-          type: user.type,
-        }));
       }
 
       if (parsedData.type === MESSAGE_TYPE.CREATE_ROOM) {
@@ -385,7 +385,7 @@ export const WsContextProvider = ({
     if (!ws) return;
     if (!playerRef.current) return;
 
-    console.log("player type while starting the game ", player.type);
+    console.log("player type while starting the game ", playerRef.current.type);
 
     if (playerRef.current.type === "member") return;
 

@@ -23,8 +23,12 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function Landing({ roomId }: { roomId: string | null }) {
-  const [character, setCharacter] = useState(1);
-  const [name, setName] = useState<string>("");
+  if (typeof window === "undefined") return;
+
+  const [character, setCharacter] = useState<number>(
+    Number(localStorage.getItem("character")) ?? 1,
+  );
+  const [name, setName] = useState<string>(localStorage.getItem("name") ?? "");
   const [lng, setLng] = useState<string>("en");
 
   const handleCharacter = (action: "forward" | "back") => {

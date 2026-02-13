@@ -11,7 +11,7 @@ export const LandingHead = () => {
         width={100}
         unoptimized
         height={100}
-        className="h-auto w-xs md:max-w-md"
+        className="h-auto w-md md:max-w-lg"
         loading="eager"
       />
     </div>

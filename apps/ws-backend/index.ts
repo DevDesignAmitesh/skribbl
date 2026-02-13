@@ -49,7 +49,7 @@ server.on("connection", (ws: ExtendedWebSocket, req) => {
 
   ws.on("message", (data) => {
     const parsedData = JSON.parse(data.toString());
-    console.log("received data ", parsedData);
+    // console.log("received data ", parsedData);
 
     if (parsedData.type === MESSAGE_TYPE.CREATE_ROOM) {
       const {
@@ -296,6 +296,8 @@ server.on("connection", (ws: ExtendedWebSocket, req) => {
         );
         return;
       }
+      console.log(user.type);
+      console.log(room.room.total_round === room.users.length * room.room.rounds)
 
       if (room.room.total_round === room.users.length * room.room.rounds) {
         room.users.forEach((usr) => {
