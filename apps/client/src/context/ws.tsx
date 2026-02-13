@@ -21,10 +21,10 @@ interface WsContextProps {
     language: string,
   ) => void;
   handleCreateRoom: (room: Room) => void;
-  gameStarting: boolean;
   roomJoin: boolean;
   roomLeft: boolean;
   handleStartRoom: () => void;
+  handleRoundSummary: () => void;
   clearCanvas: () => void;
   handleHalfTime: () => void;
   sendGuessedWord: (word: string) => void;
@@ -41,7 +41,6 @@ export const WsContextProvider = ({
 }) => {
   const [ws, setWs] = useState<WebSocket | null>(null);
   const roomIdRef = useRef<string | null>(null);
-  const [gameStarting, setGameStarting] = useState<boolean>(false);
   const [roomJoin, setRoomJoin] = useState<boolean>(false);
   const [roomLeft, setRoomLeft] = useState<boolean>(false);
 
@@ -268,6 +267,11 @@ export const WsContextProvider = ({
       }
 
       if (parsedData.type === MESSAGE_TYPE.ANOTHER_ONE) {
+        handleRoundSummary();
+      }
+
+      if (parsedData.type === MESSAGE_TYPE.ROUND_SUMMARY) {
+        const { room, rightWord } = parsedData.data;
         setTimeout(() => {
           // Important:
           // This logic was originally using `roomId` from the initial render.
@@ -280,11 +284,8 @@ export const WsContextProvider = ({
           // Fix: Use a ref (e.g., roomIdRef.current) to always access the latest roomId
           // instead of relying on the state value captured in this effect.
           handleStartRoom();
-        }, 2000);
-      }
+        }, 2500);
 
-      if (parsedData.type === MESSAGE_TYPE.ROUND_SUMMARY) {
-        const { room, rightWord } = parsedData.data;
         setRoom(room);
         setRightWord(rightWord);
         handleSetView("round-summary");
@@ -377,15 +378,19 @@ export const WsContextProvider = ({
   const handleStartRoom = () => {
     if (!ws) return;
 
-    /**
-     * first we will send round_summary so that the user can see it
-     *
-     * and then after 3 seconds we are not send to start new game
-     *
-     * TODO: there is one catch that if the game is finished then first it will show the
-     * summary and then also the round ends summary which is repeting
-     * but okayish we will see it
-     */
+    ws.send(
+      JSON.stringify({
+        type: MESSAGE_TYPE.START_GAME,
+        data: {
+          roomId: roomIdRef.current,
+          userId: player.id,
+        },
+      }),
+    );
+  };
+
+  const handleRoundSummary = () => {
+    if (!ws) return;
 
     ws.send(
       JSON.stringify({
@@ -396,20 +401,6 @@ export const WsContextProvider = ({
         },
       }),
     );
-
-    setGameStarting(true);
-    setTimeout(() => {
-      ws.send(
-        JSON.stringify({
-          type: MESSAGE_TYPE.START_GAME,
-          data: {
-            roomId: roomIdRef.current,
-            userId: player.id,
-          },
-        }),
-      );
-      setGameStarting(false);
-    }, 3000);
   };
 
   const sendGuessedWord = (word: string) => {
@@ -550,7 +541,7 @@ export const WsContextProvider = ({
         handleSendMessage,
         handleHalfTime,
         clearCanvas,
-        gameStarting,
+        handleRoundSummary,
         roomJoin,
         roomLeft,
       }}

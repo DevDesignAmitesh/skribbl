@@ -8,7 +8,7 @@ import Sound from "react-sound";
 
 export const MainHeader = () => {
   const { room, rightWord, halfWord, totalLength, player } = useRestContext();
-  const { handleHalfTime, handleStartRoom } = useWsContext();
+  const { handleHalfTime, handleRoundSummary } = useWsContext();
 
   const exposedPlayedRef = useRef<boolean>(false);
 
@@ -18,8 +18,10 @@ export const MainHeader = () => {
 
   const halftimeRef = useRef<boolean>(false);
 
+  const prevRoundEndsAtRef = useRef<number>(room.room?.roundEndsAt);
+
   const onTimeUp = () => {
-    handleStartRoom();
+    handleRoundSummary();
   };
 
   const onHalfTime = () => {
@@ -27,33 +29,61 @@ export const MainHeader = () => {
   };
 
   useEffect(() => {
-    if (room.room?.status === "creating" || room.room?.status === "ended")
+    if (!room || !room.room) return;
+    // return if round is not started yet
+    if (room.room?.status === "creating" || room.room?.status === "ended") {
       return;
+    }
+
+    // Reset refs when a new round starts (roundEndsAt changes)
+    if (prevRoundEndsAtRef.current !== room.room?.roundEndsAt) {
+      halftimeRef.current = false;
+      exposedPlayedRef.current = false;
+      prevRoundEndsAtRef.current = room.room?.roundEndsAt;
+    }
+
+    // Update initial time
+    const remaining = Math.max(
+      0,
+      Math.ceil((room.room?.roundEndsAt! - Date.now()) / 1000),
+    );
+    setTimeRemaining(remaining);
 
     const interval = setInterval(() => {
       const remaining = Math.max(
         0,
         Math.ceil((room.room?.roundEndsAt! - Date.now()) / 1000),
       );
-
       setTimeRemaining(remaining);
-      if (!halftimeRef.current) {
-        if (remaining <= Math.floor(room.room?.draw_time! / 2)) {
-          // TODO: we can check here if the user is already guessed or not, this will save
-          // us a server call
-          onHalfTime?.();
-          halftimeRef.current = true;
-        }
+
+      // Half-time check - more reliable
+      const halfTimeThreshold = Math.floor(room.room?.draw_time! / 2);
+      console.log("halfTimeThreshold ", halfTimeThreshold);
+      if (
+        !halftimeRef.current &&
+        remaining <= halfTimeThreshold &&
+        remaining > 0
+      ) {
+        console.log("half time running??");
+        onHalfTime?.();
+        halftimeRef.current = true;
       }
 
       if (remaining === 0) {
         clearInterval(interval);
-        onTimeUp();
+        onTimeUp?.();
       }
-    }, 500); // 500ms = smoother + safer
+    }, 500);
 
     return () => clearInterval(interval);
-  }, [room.room?.roundEndsAt!, onTimeUp, room.room?.status]);
+  }, [
+    room.room,
+    room.room?.roundEndsAt,
+    room.room?.status,
+    room.room?.latest_round,
+    onHalfTime,
+    onTimeUp,
+  ]);
 
   const isLowTime = timeRemaining <= 10;
 

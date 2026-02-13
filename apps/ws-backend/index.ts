@@ -34,8 +34,6 @@ const allowedOrigins = ["http://localhost:3000", "https://notskribbl.xyz"];
 server.on("connection", (ws: ExtendedWebSocket, req) => {
   const origin = req.headers.origin;
 
-  console.log("origin ", origin); // your frontend url
-
   if (!origin) {
     ws.close();
     return;
@@ -310,7 +308,8 @@ server.on("connection", (ws: ExtendedWebSocket, req) => {
           );
         });
         rightWords.delete(room.room.id);
-        room.room.total_round = 0;
+        const filteredRooms = rooms.filter((rm) => rm.room.id !== room.room.id);
+        rooms = filteredRooms;
         return;
       }
 
@@ -411,6 +410,20 @@ server.on("connection", (ws: ExtendedWebSocket, req) => {
 
       if (room.room.total_round === 0) {
         return;
+      }
+
+      if (room.room.total_round === room.users.length * room.room.rounds) {
+        room.users.forEach((usr) => {
+          usr.ws.send(
+            JSON.stringify({
+              type: MESSAGE_TYPE.GAME_END,
+              data: {
+                message: "game ends",
+                room,
+              },
+            }),
+          );
+        });
       }
 
       const rightWord = rightWords.get(room.room.id);
@@ -591,39 +604,22 @@ server.on("connection", (ws: ExtendedWebSocket, req) => {
 
         splitedGuessedWord.forEach((chr: string, idx: number) => {
           const rightChr = splitedRightWord[idx];
-          console.log("chr ", chr);
-          console.log("rightChr ", rightChr);
-
           if (rightChr === chr) matches++;
         });
-        console.log("matches", matches);
-        console.log("right_word!.length / 2 ", right_word!.length / 2);
 
         if (matches >= right_word!.length / 2) {
-          const filterdUser = room.users.filter((usr) => usr.id !== user.id);
-          room.users = [...filterdUser, user];
-
-          filterdUser.forEach((usr) => {
+          room.users.forEach((usr) => {
             usr.ws.send(
               JSON.stringify({
                 type: MESSAGE_TYPE.MESSAGE,
                 data: {
-                  message: word,
+                  message:
+                    usr.ws === ws ? "The guessed word was too close" : word,
                   from: usr.ws === ws ? "You" : user.name,
                 },
               }),
             );
           });
-
-          user.ws.send(
-            JSON.stringify({
-              type: MESSAGE_TYPE.MESSAGE,
-              data: {
-                message: "The guessed word was too close",
-                from: user.name,
-              },
-            }),
-          );
         } else {
           room.users.forEach((usr) => {
             usr.ws.send(
@@ -689,11 +685,11 @@ server.on("connection", (ws: ExtendedWebSocket, req) => {
         if (usr.status === "idol") idolUser += 1;
       });
 
-      console.log("idolUser ", idolUser);
-
       if (idolUser === room.users.length - 1) {
         const admin = room.users.find((usr) => usr.type === "admin");
-        admin?.ws.send(
+        if (!admin) return;
+
+        admin.ws.send(
           JSON.stringify({
             type: MESSAGE_TYPE.ANOTHER_ONE,
           }),
@@ -745,15 +741,12 @@ server.on("connection", (ws: ExtendedWebSocket, req) => {
       let halfWord: HalfWord[] = [];
 
       for (let i = 1; i <= wordsToSend; i++) {
-        console.log("loop is running");
         const elm = right_word![i]!;
         halfWord.push({
           elm,
           idx: i,
         });
       }
-
-      console.log("halfWord ", halfWord);
 
       user.ws.send(
         JSON.stringify({
