@@ -282,6 +282,8 @@ server.on("connection", (ws: ExtendedWebSocket, req) => {
         return;
       }
 
+      if (user.type === "member") return;
+
       if (room.users.length === 1) {
         ws.send(
           JSON.stringify({

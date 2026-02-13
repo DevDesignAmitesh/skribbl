@@ -11,6 +11,7 @@ import React, {
 import { useRestContext } from "./rest";
 import { MESSAGE_TYPE, Room, User } from "@repo/common/common";
 import { toast } from "sonner";
+import { Player } from "@/components/game/types";
 
 interface WsContextProps {
   ws: WebSocket | null;
@@ -41,6 +42,7 @@ export const WsContextProvider = ({
 }) => {
   const [ws, setWs] = useState<WebSocket | null>(null);
   const roomIdRef = useRef<string | null>(null);
+  const playerRef = useRef<Player | null>(null);
   const [roomJoin, setRoomJoin] = useState<boolean>(false);
   const [roomLeft, setRoomLeft] = useState<boolean>(false);
 
@@ -311,6 +313,10 @@ export const WsContextProvider = ({
     roomIdRef.current = roomId ?? room.room?.id ?? null;
   }, [roomId, room]);
 
+  useEffect(() => {
+    playerRef.current = player ?? null;
+  }, [player]);
+
   const handleRoomJoin = (
     roomId: string | null,
     name: string,
@@ -377,13 +383,18 @@ export const WsContextProvider = ({
 
   const handleStartRoom = () => {
     if (!ws) return;
+    if (!playerRef.current) return;
+
+    console.log("player type while starting the game ", player.type);
+
+    if (playerRef.current.type === "member") return;
 
     ws.send(
       JSON.stringify({
         type: MESSAGE_TYPE.START_GAME,
         data: {
           roomId: roomIdRef.current,
-          userId: player.id,
+          userId: playerRef.current.id,
         },
       }),
     );
