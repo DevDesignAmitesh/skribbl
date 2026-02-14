@@ -17,8 +17,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Skribbl Clone",
-  description: "Play guessing game with friends | Try to break it.",
+  title: "notskribbl - Free Multiplayer Drawing & Guessing Game",
+  description:
+    "notskribbl.xyz is a free mutiplayer drawing and guessing game. Draw and guess....",
 };
 
 export default function RootLayout({

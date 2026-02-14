@@ -12,7 +12,7 @@ export const Footer = () => {
         </span>
       </p>
       <p>
-        Credits to {" "}
+        Credits to the {" "}
         <span className="font-semibold underline hover:opacity-90">
           <Link href={"https://skribbl.io/"} target="_blank">
             real one 

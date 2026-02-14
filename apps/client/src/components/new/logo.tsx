@@ -14,7 +14,7 @@ export const Logo = ({ width }: { width: string }) => {
         alt="logo"
         width={100}
         height={100}
-        className={width}
+        className={`${width}`}
         loading="eager"
       />
     </div>
