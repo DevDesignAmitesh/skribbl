@@ -23,7 +23,11 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function Landing({ roomId }: { roomId: string | null }) {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined") {
+    return (
+      <div className="h-screen w-full bg-[url(/landing-bg.png)] px-4"></div>
+    );
+  }
 
   const [character, setCharacter] = useState<number>(
     Number(localStorage.getItem("character") ?? 1),

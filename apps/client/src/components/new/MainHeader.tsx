@@ -7,7 +7,8 @@ import { formatHalfWord, formatHiddenWord } from "@/lib/lib";
 import Sound from "react-sound";
 
 export const MainHeader = () => {
-  const { room, rightWord, halfWord, totalLength, player } = useRestContext();
+  const { room, rightWord, halfWord, totalLength, player, viewRef } =
+    useRestContext();
   const { handleHalfTime, handleRoundSummary } = useWsContext();
 
   const exposedPlayedRef = useRef<boolean>(false);
@@ -30,6 +31,7 @@ export const MainHeader = () => {
   };
 
   useEffect(() => {
+    if (viewRef.current !== "share-room") return;
     if (!room || !room.room) return;
     // return if round is not started yet
     if (room.room?.status === "creating" || room.room?.status === "ended") {
@@ -71,7 +73,7 @@ export const MainHeader = () => {
         onHalfTime?.();
         halftimeRef.current = true;
       }
-      
+
       if (!timeUpRef.current && remaining === 0) {
         console.log("time up running??");
         timeUpRef.current = true;
@@ -119,7 +121,12 @@ export const MainHeader = () => {
                     : "text-foreground"
                 }`}
               >
-                {room.room?.status === "ongoing" ? timeRemaining : 0}s
+                {room.room?.status === "ongoing"
+                  ? isNaN(timeRemaining)
+                    ? 0
+                    : timeRemaining
+                  : 0}
+                s
               </span>
             </div>
 
