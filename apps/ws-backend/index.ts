@@ -31,7 +31,7 @@ let rooms: {
 let rightWords: Map<string, string> = new Map();
 
 // Define allowed origins
-const allowedOrigins = ["http://localhost:3000", "https://notskribbl.xyz"];
+const allowedOrigins = ["http://localhost:3000", "https://www.notskribbl.xyz"];
 
 server.on("connection", (ws: ExtendedWebSocket, req) => {
   const origin = req.headers.origin;
