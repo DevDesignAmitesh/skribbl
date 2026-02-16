@@ -296,8 +296,6 @@ export const Main = () => {
     ws.onmessage = (event) => {
       const parsedData = JSON.parse(event.data);
 
-      console.log("recevied data ", parsedData);
-
       if (parsedData.type === MESSAGE_TYPE.CREATE_ROOM) {
         const { room, roomUrl } = parsedData.data;
 
@@ -611,13 +609,13 @@ export const Main = () => {
   } else if (view === "summary") {
     return (
       <>
-        <GameSummary
+        {/* <GameSummary
           players={room.users}
           redirectTime={10}
           onRestart={() =>
             window.location.replace(process.env.NEXT_PUBLIC_FRONTEND_URL!)
           }
-        />
+        /> */}
         <Sound url="/gameover.mp3" playStatus="PLAYING" />
       </>
     );

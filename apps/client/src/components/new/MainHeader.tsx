@@ -62,20 +62,16 @@ export const MainHeader = () => {
 
       // Half-time check - more reliable
       const halfTimeThreshold = Math.floor(room.room?.draw_time! / 2);
-      console.log("halfTimeThreshold ", halfTimeThreshold);
-      console.log("remaining ", remaining);
       if (
         !halftimeRef.current &&
         remaining <= halfTimeThreshold &&
         remaining > 0
       ) {
-        console.log("half time running??");
         onHalfTime?.();
         halftimeRef.current = true;
       }
 
       if (!timeUpRef.current && remaining === 0) {
-        console.log("time up running??");
         timeUpRef.current = true;
         clearInterval(interval);
         onTimeUp?.();

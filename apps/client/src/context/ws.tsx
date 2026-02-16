@@ -40,7 +40,6 @@ export const WsContextProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  console.log("getting called ws");
   const [ws, setWs] = useState<WebSocket | null>(null);
   const roomIdRef = useRef<string | null>(null);
   const playerRef = useRef<Player | null>(null);
@@ -73,7 +72,6 @@ export const WsContextProvider = ({
   useEffect(() => {
     const ws = new WebSocket(WS_URL);
     setWs(ws);
-    console.log("calling");
   }, []);
 
   useEffect(() => {
@@ -81,8 +79,6 @@ export const WsContextProvider = ({
 
     ws.onmessage = (event) => {
       const parsedData = JSON.parse(event.data);
-
-      console.log("recevied data ", parsedData);
 
       if (
         parsedData.type === MESSAGE_TYPE.JOIN_ROOM ||
@@ -312,7 +308,6 @@ export const WsContextProvider = ({
     };
 
     ws.onerror = (err) => {
-      console.log("ws error ", err);
       handleSetView("error");
     };
   }, [ws]);
@@ -392,8 +387,6 @@ export const WsContextProvider = ({
   const handleStartRoom = () => {
     if (!ws) return;
     if (!playerRef.current) return;
-
-    console.log("player type while starting the game ", playerRef.current.type);
 
     if (playerRef.current.type === "member") return;
 
