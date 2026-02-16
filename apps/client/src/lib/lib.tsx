@@ -1,7 +1,10 @@
 import { HalfWord } from "@repo/common/common";
 
 // for deployed one
-export const WS_URL = "wss://skribbl-be.amitesh.work";
+export const WS_URL =
+  process.env.NODE_ENV === "development"
+    ? "ws://localhost:8080"
+    : "wss://skribbl-be.amitesh.work";
 
 // for localhost
 // export const WS_URL = "ws://localhost:8080";

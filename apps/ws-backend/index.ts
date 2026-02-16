@@ -417,27 +417,27 @@ server.on("connection", (ws: ExtendedWebSocket, req) => {
         return;
       }
 
-      if (room.room.total_round === 0) {
-        return;
-      }
+      // if (room.room.total_round === 0) {
+      //   return;
+      // }
 
-      if (room.room.total_round === room.users.length * room.room.rounds) {
-        room.users.forEach((usr) => {
-          usr.ws.send(
-            JSON.stringify({
-              type: MESSAGE_TYPE.GAME_END,
-              data: {
-                message: "game ends",
-                room,
-              },
-            }),
-          );
-        });
-        rightWords.delete(room.room.id);
-        const filteredRooms = rooms.filter((rm) => rm.room.id !== room.room.id);
-        rooms = filteredRooms;
-        return;
-      }
+      // if (room.room.total_round === room.users.length * room.room.rounds) {
+      //   room.users.forEach((usr) => {
+      //     usr.ws.send(
+      //       JSON.stringify({
+      //         type: MESSAGE_TYPE.GAME_END,
+      //         data: {
+      //           message: "game ends",
+      //           room,
+      //         },
+      //       }),
+      //     );
+      //   });
+      //   rightWords.delete(room.room.id);
+      //   const filteredRooms = rooms.filter((rm) => rm.room.id !== room.room.id);
+      //   rooms = filteredRooms;
+      //   return;
+      // }
 
       const rightWord = rightWords.get(room.room.id);
 
