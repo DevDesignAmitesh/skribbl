@@ -40,6 +40,7 @@ export const WsContextProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
+  console.log("getting called ws");
   const [ws, setWs] = useState<WebSocket | null>(null);
   const roomIdRef = useRef<string | null>(null);
   const playerRef = useRef<Player | null>(null);
@@ -72,6 +73,7 @@ export const WsContextProvider = ({
   useEffect(() => {
     const ws = new WebSocket(WS_URL);
     setWs(ws);
+    console.log("calling");
   }, []);
 
   useEffect(() => {
@@ -106,7 +108,9 @@ export const WsContextProvider = ({
         ]);
 
         setRoom(room);
-        const user = room.users.find((usr: User) => usr.id === player.id);
+        const user = room.users.find(
+          (usr: User) => usr.id === playerRef.current!.id,
+        );
         if (!user) return;
 
         setPlayer((prev) => ({
@@ -166,7 +170,9 @@ export const WsContextProvider = ({
         setRoom(room);
         setHalfWord([]);
         setRightWord(null);
-        const user = room.users.find((usr: User) => usr.id === player.id);
+        const user = room.users.find(
+          (usr: User) => usr.id === playerRef.current!.id,
+        );
         if (!user) return;
         setChooseType("chooser");
         setPlayer((prev) => ({
@@ -180,7 +186,9 @@ export const WsContextProvider = ({
         setRoom(room);
         setHalfWord([]);
         setRightWord(null);
-        const user = room.users.find((usr: User) => usr.id === player.id);
+        const user = room.users.find(
+          (usr: User) => usr.id === playerRef.current!.id,
+        );
         if (!user) return;
         setChooseType("choosing");
         setPlayer((prev) => ({
@@ -329,7 +337,7 @@ export const WsContextProvider = ({
     setPlayer((prev) => ({
       ...prev,
       avatarIndex: character,
-      id: player.id,
+      id: playerRef.current!.id,
       name,
     }));
 
@@ -340,7 +348,7 @@ export const WsContextProvider = ({
           data: {
             roomId,
             name,
-            userId: player.id,
+            userId: playerRef.current!.id,
             character,
           },
         }),
@@ -354,7 +362,7 @@ export const WsContextProvider = ({
         type: MESSAGE_TYPE.JOIN_RANDOM,
         data: {
           name,
-          userId: player.id,
+          userId: playerRef.current!.id,
           character,
           language,
         },
@@ -374,7 +382,7 @@ export const WsContextProvider = ({
         data: {
           ...room,
           userName: name,
-          userId: player.id,
+          userId: playerRef.current!.id,
           character,
         },
       }),
@@ -402,13 +410,17 @@ export const WsContextProvider = ({
 
   const handleRoundSummary = () => {
     if (!ws) return;
+    if (!playerRef.current) return;
+
+    // only admin can send this summary and from the backend everyone is receving
+    if (playerRef.current.type !== "admin") return;
 
     ws.send(
       JSON.stringify({
         type: MESSAGE_TYPE.ROUND_SUMMARY,
         data: {
           roomId: roomIdRef.current,
-          userId: player.id,
+          userId: playerRef.current.id,
         },
       }),
     );
@@ -436,7 +448,7 @@ export const WsContextProvider = ({
         data: {
           roomId: roomIdRef.current,
           word,
-          userId: player.id,
+          userId: playerRef.current!.id,
         },
       }),
     );
@@ -451,7 +463,7 @@ export const WsContextProvider = ({
         data: {
           roomId: roomIdRef.current,
           word: message,
-          userId: player.id,
+          userId: playerRef.current!.id,
         },
       }),
     );
@@ -506,7 +518,7 @@ export const WsContextProvider = ({
         data: {
           payload,
           roomId: roomIdRef.current,
-          userId: player.id,
+          userId: playerRef.current!.id,
         },
       }),
     );
@@ -514,13 +526,17 @@ export const WsContextProvider = ({
 
   const handleHalfTime = () => {
     if (!ws) return;
+    if(!playerRef.current) return;
+    
+    // only a guesser can send the half word request
+    if (playerRef.current.status !== "guesser") return;
 
     ws.send(
       JSON.stringify({
         type: MESSAGE_TYPE.HALF_TIME,
         data: {
           roomId: roomIdRef.current,
-          userId: player.id,
+          userId: playerRef.current!.id,
         },
       }),
     );
@@ -534,7 +550,7 @@ export const WsContextProvider = ({
         type: MESSAGE_TYPE.CLEAR_CANVAS,
         data: {
           roomId: roomIdRef.current,
-          userId: player.id,
+          userId: playerRef.current!.id,
         },
       }),
     );

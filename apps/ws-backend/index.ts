@@ -12,11 +12,13 @@ interface ExtendedWebSocket extends WebSocket {
   roomId: string;
 }
 
-const server = new WebSocketServer({ port: Number(process.env.PORT) });
+const PORT = Number(process.env.PORT);
+
+const server = new WebSocketServer({ port: PORT });
 
 const generate = () => {
-  const randomIndex = Math.floor(Math.random() * random_words.length);
-  return random_words[randomIndex]?.split(", ")!;
+  const randomIndex = Math.floor(Math.random() * random_words.length)!;
+  return random_words[randomIndex]!.split(", ")!;
 };
 
 // all rooms in memory
@@ -50,6 +52,7 @@ server.on("connection", (ws: ExtendedWebSocket, req) => {
   ws.on("message", (data) => {
     const parsedData = JSON.parse(data.toString());
     // console.log("received data ", parsedData);
+    console.log("received data type ", parsedData.type);
 
     if (parsedData.type === MESSAGE_TYPE.CREATE_ROOM) {
       const {
@@ -296,8 +299,6 @@ server.on("connection", (ws: ExtendedWebSocket, req) => {
         );
         return;
       }
-      console.log(user.type);
-      console.log(room.room.total_round === room.users.length * room.room.rounds)
 
       if (room.room.total_round === room.users.length * room.room.rounds) {
         room.users.forEach((usr) => {
@@ -412,6 +413,10 @@ server.on("connection", (ws: ExtendedWebSocket, req) => {
         return;
       }
 
+      if (user.type !== "admin") {
+        return;
+      }
+
       if (room.room.total_round === 0) {
         return;
       }
@@ -428,6 +433,10 @@ server.on("connection", (ws: ExtendedWebSocket, req) => {
             }),
           );
         });
+        rightWords.delete(room.room.id);
+        const filteredRooms = rooms.filter((rm) => rm.room.id !== room.room.id);
+        rooms = filteredRooms;
+        return;
       }
 
       const rightWord = rightWords.get(room.room.id);
@@ -905,3 +914,5 @@ server.on("connection", (ws: ExtendedWebSocket, req) => {
     }
   });
 });
+
+console.log("server is running at", PORT);

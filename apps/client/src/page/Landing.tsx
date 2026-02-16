@@ -26,7 +26,7 @@ export default function Landing({ roomId }: { roomId: string | null }) {
   if (typeof window === "undefined") return;
 
   const [character, setCharacter] = useState<number>(
-    Number(localStorage.getItem("character")) ?? 1,
+    Number(localStorage.getItem("character") ?? 1),
   );
   const [name, setName] = useState<string>(localStorage.getItem("name") ?? "");
   const [lng, setLng] = useState<string>("en");

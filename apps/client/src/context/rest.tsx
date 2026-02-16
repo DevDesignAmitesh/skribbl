@@ -66,6 +66,7 @@ export const RestContextProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
+  console.log("getting called rest");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [view, setView] = useState<ViewState>("landing");
   const viewRef = useRef<ViewState>("landing");

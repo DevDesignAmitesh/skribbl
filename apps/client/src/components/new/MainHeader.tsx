@@ -17,6 +17,7 @@ export const MainHeader = () => {
   );
 
   const halftimeRef = useRef<boolean>(false);
+  const timeUpRef = useRef<boolean>(false);
 
   const prevRoundEndsAtRef = useRef<number>(room.room?.roundEndsAt);
 
@@ -38,6 +39,7 @@ export const MainHeader = () => {
     // Reset refs when a new round starts (roundEndsAt changes)
     if (prevRoundEndsAtRef.current !== room.room?.roundEndsAt) {
       halftimeRef.current = false;
+      timeUpRef.current = false;
       exposedPlayedRef.current = false;
       prevRoundEndsAtRef.current = room.room?.roundEndsAt;
     }
@@ -59,6 +61,7 @@ export const MainHeader = () => {
       // Half-time check - more reliable
       const halfTimeThreshold = Math.floor(room.room?.draw_time! / 2);
       console.log("halfTimeThreshold ", halfTimeThreshold);
+      console.log("remaining ", remaining);
       if (
         !halftimeRef.current &&
         remaining <= halfTimeThreshold &&
@@ -68,8 +71,10 @@ export const MainHeader = () => {
         onHalfTime?.();
         halftimeRef.current = true;
       }
-
-      if (remaining === 0) {
+      
+      if (!timeUpRef.current && remaining === 0) {
+        console.log("time up running??");
+        timeUpRef.current = true;
         clearInterval(interval);
         onTimeUp?.();
       }

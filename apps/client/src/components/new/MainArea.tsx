@@ -31,7 +31,7 @@ export const MainArea = () => {
             onSelectWord={sendGuessedWord}
           />
         ) : chooseType === "choosing" ? (
-          <div className="w-full h-full bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 md:p-0">
+          <div className="w-full md:h-full h-60 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 md:p-0">
             <div className="flex flex-col items-center md:gap-6 gap-3 text-white text-center">
               <p className="text-xl md:text-3xl font-semibold">
                 {chooser?.name} is choosing a word...
