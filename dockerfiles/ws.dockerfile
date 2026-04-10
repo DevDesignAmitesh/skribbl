@@ -22,4 +22,4 @@ RUN bun install
 EXPOSE 8080
 
 # absolute path
-CMD [ "bun", "run", "start"]
+CMD [ "bun", "run", "start:ws"]
