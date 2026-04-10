@@ -15,6 +15,9 @@ COPY . .
 ENV NODE_ENV=production
 ENV DOCKER_CONTAINER=true
 
+WORKDIR /usr/src/app/apps/ws-backend
+RUN bun install
+
 # run the app
 EXPOSE 8080
 
