@@ -21,5 +21,6 @@ RUN bun install
 # run the app
 EXPOSE 8080
 
+WORKDIR /usr/src/app
 # absolute path
 CMD [ "bun", "run", "start:ws"]
