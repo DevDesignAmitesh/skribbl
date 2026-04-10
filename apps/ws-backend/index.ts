@@ -14,7 +14,7 @@ interface ExtendedWebSocket extends WebSocket {
 
 const PORT = Number(process.env.PORT);
 
-const server = new WebSocketServer({ port: PORT });
+const server = new WebSocketServer({ port: PORT, host:"0.0.0.0" });
 
 const generate = () => {
   const randomIndex = Math.floor(Math.random() * random_words.length)!;
@@ -31,7 +31,7 @@ let rooms: {
 let rightWords: Map<string, string> = new Map();
 
 // Define allowed origins
-const allowedOrigins = ["http://localhost:3000", "https://www.notskribbl.xyz"];
+const allowedOrigins = ["http://localhost:3000", "https://skribbl.amitesh.work"];
 
 server.on("connection", (ws: ExtendedWebSocket, req) => {
   const origin = req.headers.origin;
@@ -507,10 +507,10 @@ server.on("connection", (ws: ExtendedWebSocket, req) => {
       // word = 'taj mahal'
 
       const splitedArr = right_word.split(" ");
-
-      // splitedArr = ["taj", "mahal"]
-
+      // for eg: splitedArr = ["taj", "mahal"]
+      
       const totalLength: number[] = [];
+      // for eg: totalLength = [3, 5]
 
       for (let i = 0; i < splitedArr.length; i++) {
         const element = splitedArr[i];
@@ -520,7 +520,7 @@ server.on("connection", (ws: ExtendedWebSocket, req) => {
       }
 
       // totalLength => we will map this on the frontend and render something like this
-      // --- -----
+      // _ _ _  _ _ _ _ _ 
 
       room.users.forEach((usr) => {
         usr.ws.send(
