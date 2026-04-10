@@ -7,7 +7,7 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "start:ws": "cd apps/ws-backend && bun i && bun run index.ts"
+    "start:ws": "cd apps/ws-backend && bun run index.ts"
   },
   "devDependencies": {
     "prettier": "^3.7.4",
