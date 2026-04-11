@@ -1,8 +1,8 @@
-# NotSkribbl 🎨
+# SketchSprint 🎨
 
 A real-time multiplayer drawing and guessing game - a modern clone of Skribbl.io built from scratch.
 
-**[Play Live →](https://notskribbl.xyz/)**
+**[Play Live →](https://skribbl.amitesh.work/)**
 
 ## Features
 
